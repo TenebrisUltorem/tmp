@@ -10,8 +10,7 @@ pub struct PlaylistComponent {}
 impl Widget for &PlaylistComponent {
 
     fn render(self, area: Rect, buf: &mut Buffer) {
-
-    Block::bordered()
+        Block::bordered()
             .title(Line::from(" Playlist ").left_aligned())
             .render(area, buf);
     }

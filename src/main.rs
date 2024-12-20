@@ -1,6 +1,6 @@
-mod state;
 mod components;
 mod app;
+mod event_handler;
 
 use std::io::Error;
 
