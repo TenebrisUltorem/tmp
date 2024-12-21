@@ -7,20 +7,17 @@ use ratatui::symbols::border;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Padding, Widget};
 use ratatui::{crossterm, DefaultTerminal};
-use crate::components::{last_track_button, mixin_toggle, repeat_toggle};
-use crate::components::next_track_button;
-use crate::components::play_pause_button;
-use crate::components::stop_button;
-use crate::components::Button;
-use crate::components::PlaylistComponent;
-use crate::components::VisualizerComponent;
-use crate::event_handler::EventHandler;
+
+use crate::components::{
+    last_track_button, next_track_button, play_button, repeat_toggle, shuffle_toggle, stop_button, PlaylistComponent, VisualizerComponent
+};
+use crate::event_handler::{EventHandler, InteractiveWidget};
 
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
     pub exit: bool,
     pub string: String,
-    pub mixin_state: bool,
+    pub shuffle_state: bool,
     pub repeat_state: bool,
 }
 
@@ -28,13 +25,13 @@ pub struct App {
     state: AppState,
     event_handler: EventHandler,
 
-    play_button: Button,
-    last_track_button: Button,
-    next_track_button: Button,
-    stop_button: Button,
+    play_button: InteractiveWidget,
+    last_track_button: InteractiveWidget,
+    next_track_button: InteractiveWidget,
+    stop_button: InteractiveWidget,
 
-    shuffle_toggle: Button,
-    repeat_toggle: Button,
+    shuffle_toggle: InteractiveWidget,
+    repeat_toggle: InteractiveWidget,
 }
 
 impl Default for App {
@@ -42,19 +39,19 @@ impl Default for App {
     fn default() -> Self {
         let mut event_handler = EventHandler::default();
 
-        let play_button = play_pause_button();
+        let play_button = play_button();
         let last_track_button = last_track_button();
         let next_track_button = next_track_button();
         let stop_button = stop_button();
-        let shuffle_toggle = mixin_toggle();
+        let shuffle_toggle = shuffle_toggle();
         let repeat_toggle = repeat_toggle();
 
-        event_handler.register_component(Box::new(play_button.clone()));
-        event_handler.register_component(Box::new(last_track_button.clone()));
-        event_handler.register_component(Box::new(next_track_button.clone()));
-        event_handler.register_component(Box::new(stop_button.clone()));
-        event_handler.register_component(Box::new(shuffle_toggle.clone()));
-        event_handler.register_component(Box::new(repeat_toggle.clone()));
+        event_handler.register_component(play_button.clone());
+        event_handler.register_component(last_track_button.clone());
+        event_handler.register_component(next_track_button.clone());
+        event_handler.register_component(stop_button.clone());
+        event_handler.register_component(shuffle_toggle.clone());
+        event_handler.register_component(repeat_toggle.clone());
 
         Self {
             state: AppState::default(),
@@ -136,12 +133,12 @@ impl Widget for &mut App {
             Constraint::Length(6)
         ]).flex(Flex::End).areas(right_controls_area);
 
-        self.play_button.render(play_button_area, buf);
-        self.last_track_button.render(last_track_button_area, buf);
-        self.next_track_button.render(next_track_button_area, buf);
-        self.stop_button.render(stop_button_area, buf);
-        self.shuffle_toggle.render(shuffle_toggle_area, buf);
-        self.repeat_toggle.render(repeat_toggle_area, buf);
+        self.play_button.render(self.state.clone(), play_button_area, buf);
+        self.last_track_button.render(self.state.clone(), last_track_button_area, buf);
+        self.next_track_button.render(self.state.clone(), next_track_button_area, buf);
+        self.stop_button.render(self.state.clone(), stop_button_area, buf);
+        self.shuffle_toggle.render(self.state.clone(), shuffle_toggle_area, buf);
+        self.repeat_toggle.render(self.state.clone(), repeat_toggle_area, buf);
     }
 
 }
