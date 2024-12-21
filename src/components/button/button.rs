@@ -45,6 +45,7 @@ impl ButtonAppearance {
 
 #[derive(Clone)]
 pub struct Button {
+    button_area: Arc<Mutex<Rect>>,
     button_state: Arc<Mutex<InteractiveState>>,
     appearance_map: Arc<Mutex<HashMap<InteractiveState, ButtonAppearance>>>,
     interaction_actions: Arc<Mutex<InteractionActions>>
@@ -57,6 +58,7 @@ impl Button {
         appearance_map.insert(InteractiveState::Default, default_appearance);
 
         Self { 
+            button_area: Arc::new(Mutex::new(Rect::new(0, 0, 0, 0))),
             button_state: Arc::new(Mutex::new(InteractiveState::Default)),
             interaction_actions: Arc::new(Mutex::new(InteractionActions::default())),
             appearance_map: Arc::new(Mutex::new(appearance_map)),
@@ -89,9 +91,12 @@ impl Button {
 
 }
 
-impl Widget for &Button {
+impl Widget for &mut Button {
 
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let mut button_area = self.button_area.lock().unwrap();
+        *button_area = area;
+        
         let appearance = self.get_appearance();
         let mut label = Line::from(appearance.label);
 
@@ -117,4 +122,6 @@ impl Interactive for Button {
         let mut state = self.button_state.lock().unwrap();
         if *state != new_state { *state = new_state; }
     }
+
+    fn area(&self) -> Rect { self.button_area.lock().unwrap().clone() }
 }

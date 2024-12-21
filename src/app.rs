@@ -40,15 +40,31 @@ pub struct App {
 impl Default for App {
 
     fn default() -> Self {
+        let mut event_handler = EventHandler::default();
+
+        let play_button = play_pause_button();
+        let last_track_button = last_track_button();
+        let next_track_button = next_track_button();
+        let stop_button = stop_button();
+        let shuffle_toggle = mixin_toggle();
+        let repeat_toggle = repeat_toggle();
+
+        event_handler.register_component(Box::new(play_button.clone()));
+        event_handler.register_component(Box::new(last_track_button.clone()));
+        event_handler.register_component(Box::new(next_track_button.clone()));
+        event_handler.register_component(Box::new(stop_button.clone()));
+        event_handler.register_component(Box::new(shuffle_toggle.clone()));
+        event_handler.register_component(Box::new(repeat_toggle.clone()));
+
         Self {
             state: AppState::default(),
-            event_handler: EventHandler::default(),
-            play_button: play_pause_button(),
-            last_track_button: last_track_button(),
-            next_track_button: next_track_button(),
-            stop_button: stop_button(),
-            shuffle_toggle: mixin_toggle(),
-            repeat_toggle: repeat_toggle(),
+            event_handler,
+            play_button,
+            last_track_button,
+            next_track_button,
+            stop_button,
+            shuffle_toggle,
+            repeat_toggle,
         }
     }
 
@@ -126,13 +142,6 @@ impl Widget for &mut App {
         self.stop_button.render(stop_button_area, buf);
         self.shuffle_toggle.render(shuffle_toggle_area, buf);
         self.repeat_toggle.render(repeat_toggle_area, buf);
-
-        self.event_handler.register_component(Box::new(self.play_button.clone()), play_button_area);
-        self.event_handler.register_component(Box::new(self.last_track_button.clone()), last_track_button_area);
-        self.event_handler.register_component(Box::new(self.next_track_button.clone()), next_track_button_area);
-        self.event_handler.register_component(Box::new(self.stop_button.clone()), stop_button_area);
-        self.event_handler.register_component(Box::new(self.shuffle_toggle.clone()), shuffle_toggle_area);
-        self.event_handler.register_component(Box::new(self.repeat_toggle.clone()), repeat_toggle_area);
     }
 
 }

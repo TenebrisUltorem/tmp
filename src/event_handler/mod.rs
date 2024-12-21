@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Error};
+use std::io::Error;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind};
 use ratatui::layout::{Position, Rect};
 
@@ -58,19 +58,22 @@ pub enum InteractiveState {
 
 pub trait Interactive {
     fn actions(&self) -> InteractionActions;
+
     fn state(&self) -> InteractiveState;
     fn set_state(&mut self, state: InteractiveState);
+
+    fn area(&self) -> Rect;
 }
 
 #[derive(Default)]
 pub struct EventHandler {
-    components: HashMap<Rect, Box<dyn Interactive>>
+    components: Vec<Box<dyn Interactive>>
 }
 
 impl EventHandler {
 
-    pub fn register_component(&mut self, component: Box<dyn Interactive>, area: Rect) {
-        self.components.insert(area, component);
+    pub fn register_component(&mut self, component: Box<dyn Interactive>) {
+        self.components.push(component);
     }
 
     pub fn handle_events(&mut self, app_state: &mut AppState) -> Result<(), Error> {
@@ -92,17 +95,17 @@ impl EventHandler {
 
     fn handle_mouse_event(&mut self, app_state: &mut AppState, mouse_event: MouseEvent) {
         let mouse_position = Position::new(mouse_event.column, mouse_event.row);
-        for (area, component) in &mut self.components {
+        for component in &mut self.components {
             let component = component.as_mut();
 
             match mouse_event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
-                    if area.contains(mouse_position) { 
+                    if component.area().contains(mouse_position) { 
                         component.actions().handle_on_mouse_down(component, app_state);
                     }
                 }
                 MouseEventKind::Up(MouseButton::Left) | MouseEventKind::Moved => { 
-                    if area.contains(mouse_position) { 
+                    if component.area().contains(mouse_position) { 
                         component.actions().handle_on_mouse_over(component, app_state);
                     }
                     else {
