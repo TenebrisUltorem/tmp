@@ -7,17 +7,22 @@ use ratatui::symbols::border;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Padding, Widget};
 use ratatui::{crossterm, DefaultTerminal};
-
-use crate::components::buttons::{last_track_button, next_track_button, play_button, stop_button};
-use crate::components::{Button, PlaylistComponent, VisualizerComponent};
+use crate::components::{last_track_button, mixin_toggle, repeat_toggle};
+use crate::components::next_track_button;
+use crate::components::play_pause_button;
+use crate::components::stop_button;
+use crate::components::Button;
+use crate::components::PlaylistComponent;
+use crate::components::VisualizerComponent;
 use crate::event_handler::EventHandler;
 
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
     pub exit: bool,
-    pub string: String
+    pub string: String,
+    pub mixin_state: bool,
+    pub repeat_state: bool,
 }
-
 
 pub struct App {
     state: AppState,
@@ -26,7 +31,10 @@ pub struct App {
     play_button: Button,
     last_track_button: Button,
     next_track_button: Button,
-    stop_button: Button
+    stop_button: Button,
+
+    shuffle_toggle: Button,
+    repeat_toggle: Button,
 }
 
 impl Default for App {
@@ -35,10 +43,12 @@ impl Default for App {
         Self {
             state: AppState::default(),
             event_handler: EventHandler::default(),
-            play_button: play_button(),
+            play_button: play_pause_button(),
             last_track_button: last_track_button(),
             next_track_button: next_track_button(),
-            stop_button: stop_button()
+            stop_button: stop_button(),
+            shuffle_toggle: mixin_toggle(),
+            repeat_toggle: repeat_toggle(),
         }
     }
 
@@ -62,7 +72,7 @@ impl App {
 impl Widget for &mut App {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered()
-            .title(Line::from(" TMP ".bold()).centered())
+            .title(Line::from(" 𝄞 TMP 𝄞 ".bold()).centered())
             .title_bottom(Line::from(vec![" Quit".into(), "<Q>".blue()]).left_aligned())
             .padding(Padding::new(1, 1, 0, 0))
             .border_set(border::THICK);
@@ -88,6 +98,11 @@ impl Widget for &mut App {
         VisualizerComponent::new(self.state.clone()).render(visualizer_area, buf);
         PlaylistComponent::default().render(playlist_area, buf);
 
+        let [left_controls_area, right_controls_area] = Layout::horizontal([
+            Constraint::Percentage(50),
+            Constraint::Percentage(50)
+        ]).areas(controls_area);
+
         let [
             play_button_area,
             last_track_button_area,
@@ -98,17 +113,26 @@ impl Widget for &mut App {
             Constraint::Length(9), 
             Constraint::Length(9),
             Constraint::Length(9)
-        ]).flex(Flex::Start).areas(controls_area);
+        ]).flex(Flex::Start).areas(left_controls_area);
+
+        let [shuffle_toggle_area, repeat_toggle_area] = Layout::horizontal([
+            Constraint::Length(6),
+            Constraint::Length(6)
+        ]).flex(Flex::End).areas(right_controls_area);
 
         self.play_button.render(play_button_area, buf);
         self.last_track_button.render(last_track_button_area, buf);
         self.next_track_button.render(next_track_button_area, buf);
         self.stop_button.render(stop_button_area, buf);
-        
+        self.shuffle_toggle.render(shuffle_toggle_area, buf);
+        self.repeat_toggle.render(repeat_toggle_area, buf);
+
         self.event_handler.register_component(Box::new(self.play_button.clone()), play_button_area);
         self.event_handler.register_component(Box::new(self.last_track_button.clone()), last_track_button_area);
         self.event_handler.register_component(Box::new(self.next_track_button.clone()), next_track_button_area);
         self.event_handler.register_component(Box::new(self.stop_button.clone()), stop_button_area);
+        self.event_handler.register_component(Box::new(self.shuffle_toggle.clone()), shuffle_toggle_area);
+        self.event_handler.register_component(Box::new(self.repeat_toggle.clone()), repeat_toggle_area);
     }
 
 }

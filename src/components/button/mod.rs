@@ -1,119 +1,161 @@
-pub mod buttons;
+mod button;
+pub use button::Button;
 
-use std::sync::{Arc, Mutex};
+use button::ButtonAppearance;
+use ratatui::widgets::BorderType;
 
-use ratatui::buffer::Buffer;
-use ratatui::layout::Rect;
-use ratatui::text::Line;
-use ratatui::widgets::{Block, BorderType, Paragraph, Widget};
+use crate::event_handler::{InteractionActions, InteractiveState};
 
-use crate::app::AppState;
+pub fn play_pause_button() -> Button {
+    let default_appearance = ButtonAppearance::new("▷");
+    let pressed_appearance = ButtonAppearance::new("▸");
+    let hovered_appearance = ButtonAppearance::new("▶").with_border(BorderType::Thick);
 
-use crate::event_handler::{Interactive, InteractiveState};
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += "Play button clicked \n";
+        })
+        .on_mouse_up(|button, _| {
+            button.set_state(InteractiveState::Default);
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
 
-struct ButtonState {
-    interactive_state: InteractiveState,
-    label: String,
-    border_type: BorderType,
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
 }
 
-#[derive(Clone)]
-pub struct Button {
-    state: Arc<Mutex<ButtonState>>,
-    mouse_down_handler: Option<Arc<dyn Fn(&mut Button, &mut AppState)>>,
-    mouse_over_handler: Option<Arc<dyn Fn(&mut Button, &mut AppState)>>,
-    mouse_leave_handler: Option<Arc<dyn Fn(&mut Button, &mut AppState)>>
-}
+pub fn last_track_button() -> Button {
+    let default_appearance = ButtonAppearance::new("|◁◁");
+    let pressed_appearance = ButtonAppearance::new("|◂◂");
+    let hovered_appearance = ButtonAppearance::new("|◀◀").with_border(BorderType::Thick);
 
-impl Button {
-
-    pub fn new(label: impl Into<String>) -> Self {
-        Self { 
-            state: Arc::new(Mutex::new(ButtonState {
-                interactive_state: InteractiveState::Default,
-                label: label.into(),
-                border_type: BorderType::Plain
-            })),
-            mouse_down_handler: None,
-            // Устанавливаем дефолтный обработчик для mouse_over
-            mouse_over_handler: Some(Arc::new(|button: &mut Button, _: &mut AppState| {
-                button.set_border_type(BorderType::Thick);
-            })),
-            // Устанавливаем дефолтный обработчик для mouse_leave
-            mouse_leave_handler: Some(Arc::new(|button: &mut Button, _: &mut AppState| {
-                button.set_border_type(BorderType::Plain);
-            }))
-        }
-    }
-
-    pub fn on_mouse_down(mut self, handler: fn(&mut Button, &mut AppState)) -> Self {
-        self.mouse_down_handler = Some(Arc::new(handler));
-        self
-    }
-
-    pub fn on_mouse_over(mut self, handler: fn(&mut Button, &mut AppState)) -> Self {
-        self.mouse_over_handler = Some(Arc::new(handler));
-        self
-    }
-
-    pub fn on_mouse_leave(mut self, handler: fn(&mut Button, &mut AppState)) -> Self {
-        self.mouse_leave_handler = Some(Arc::new(handler));
-        self
-    }
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += "Last track button clicked \n";
+        })
+        .on_mouse_up(|button, _| {
+            button.set_state(InteractiveState::Default);
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
     
-    pub fn border_type(&self) -> BorderType {
-        self.state.lock().unwrap().border_type
-    }
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
+}   
 
-    pub fn set_border_type(&self, border_type: BorderType) {
-        self.state.lock().unwrap().border_type = border_type;
-    }
+pub fn next_track_button() -> Button {
+    let default_appearance = ButtonAppearance::new("▷▷|");
+    let pressed_appearance = ButtonAppearance::new("▸▸|");
+    let hovered_appearance = ButtonAppearance::new("▶▶|").with_border(BorderType::Thick);
 
-    pub fn label(&self) -> String {
-        self.state.lock().unwrap().label.clone()
-    }
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += "Next track button clicked \n";
+        })
+        .on_mouse_up(|button, _| {
+            button.set_state(InteractiveState::Default);
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
 
-    pub fn set_label(&self, label: impl Into<String>) {
-        self.state.lock().unwrap().label = label.into();
-    }
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
+}   
+
+pub fn stop_button() -> Button {
+    let default_appearance = ButtonAppearance::new("□");
+    let pressed_appearance = ButtonAppearance::new("▪");
+    let hovered_appearance = ButtonAppearance::new("■").with_border(BorderType::Thick);
+
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += "Stop button clicked \n";
+        })
+        .on_mouse_up(|button, _| {
+            button.set_state(InteractiveState::Default);
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
+
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
 }
 
-impl Widget for &Button {
+pub fn mixin_toggle() -> Button {
+    let default_appearance = ButtonAppearance::new("△▽");
+    let active_appearance = ButtonAppearance::new("▲▼");
+    let hovered_appearance = ButtonAppearance::new("▲▼").with_border(BorderType::Thick);
+    let pressed_appearance = ButtonAppearance::new("▴▾").with_border(BorderType::Thick);
 
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(Line::from(self.label()).centered())
-            .block(Block::bordered().border_type(self.border_type()))
-            .render(area, buf);
-    }
-    
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            app_state.mixin_state = !app_state.mixin_state;
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += format!("Mixin toggle switched to: {}\n", app_state.mixin_state).as_str();
+        })
+        .on_mouse_up(|button, app_state| {
+            if app_state.mixin_state {
+                button.set_state(InteractiveState::Active);
+            }
+            else {
+                button.set_state(InteractiveState::Default);
+            }
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
+
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Active, active_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
 }
 
-impl Interactive for Button {
-    fn handle_mouse_over(&mut self, app_state: &mut AppState) {
-        if let Some(handler) = &self.mouse_over_handler.clone() {
-            handler(self, app_state);
-        }
-    }
+pub fn repeat_toggle() -> Button {
+    let default_appearance = ButtonAppearance::new("⮎⮌");
+    let active_appearance = ButtonAppearance::new("⮬⮯");
+    let hovered_appearance = ButtonAppearance::new("⮬⮯").with_border(BorderType::Thick);
+    let pressed_appearance = ButtonAppearance::new("R").with_border(BorderType::Thick);
 
-    fn handle_mouse_leave(&mut self, app_state: &mut AppState) {
-        if let Some(handler) = &self.mouse_leave_handler.clone() {
-            let handler = handler.as_ref();
-            handler(self, app_state);
-        }
-    }
+    let actions = InteractionActions::default()
+        .on_mouse_down(|button, app_state| { 
+            app_state.repeat_state = !app_state.repeat_state;
+            button.set_state(InteractiveState::Pressed);
+            app_state.string += format!("Repeat toggle switched to: {}\n", app_state.repeat_state).as_str();
+        })
+        .on_mouse_up(|button, app_state| {
+            if app_state.repeat_state {
+                button.set_state(InteractiveState::Active);
+            }
+            else {
+                button.set_state(InteractiveState::Default);
+            }
+        })
+        .on_mouse_over(|button, _| {
+            button.set_state(InteractiveState::Hovered);
+        });
 
-    fn handle_mouse_down(&mut self, app_state: &mut AppState) {
-        if let Some(handler) = &self.mouse_down_handler.clone() {
-            let handler = handler.as_ref();
-            handler(self, app_state);
-        }
-    }
-
-    fn get_state(&self) -> InteractiveState {
-        self.state.lock().unwrap().interactive_state
-    }
-
-    fn set_state(&mut self, state: InteractiveState) {
-        self.state.lock().unwrap().interactive_state = state;
-    }
+    Button::new(default_appearance)
+        .set_appearance_on(InteractiveState::Pressed, pressed_appearance)
+        .set_appearance_on(InteractiveState::Active, active_appearance)
+        .set_appearance_on(InteractiveState::Hovered, hovered_appearance)
+        .set_actions(actions)
 }
