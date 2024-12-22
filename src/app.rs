@@ -14,8 +14,16 @@ use ratatui::{
 use std::io::Error;
 
 use crate::components::{
-    last_track_button, next_track_button, play_button, repeat_toggle, shuffle_toggle, stop_button,
-    volume_control, PlaylistComponent, VisualizerComponent,
+    last_track_button, 
+    next_track_button, 
+    play_button, 
+    progress_bar, 
+    repeat_toggle, 
+    shuffle_toggle, 
+    stop_button,
+    volume_control, 
+    PlaylistComponent, 
+    VisualizerComponent,
 };
 use crate::event_handler::{EventHandler, InteractiveWidget};
 
@@ -33,6 +41,8 @@ pub struct AppState {
 pub struct App {
     state: AppState,
     event_handler: EventHandler,
+
+    progress_bar: InteractiveWidget,
     play_button: InteractiveWidget,
     last_track_button: InteractiveWidget,
     next_track_button: InteractiveWidget,
@@ -46,6 +56,7 @@ impl Default for App {
     fn default() -> Self {
         let mut event_handler = EventHandler::default();
 
+        let progress_bar = event_handler.register_component(progress_bar());
         let play_button = event_handler.register_component(play_button());
         let last_track_button = event_handler.register_component(last_track_button());
         let next_track_button = event_handler.register_component(next_track_button());
@@ -57,6 +68,7 @@ impl Default for App {
         Self {
             state: AppState::default(),
             event_handler,
+            progress_bar,
             play_button,
             last_track_button,
             next_track_button,
@@ -101,8 +113,9 @@ impl Widget for &mut App {
         let inner = block.inner(area);
         block.render(area, buf);
 
-        let [upper_area, controls_area] = self.create_layout(inner);
+        let [upper_area, progress_bar_area, controls_area] = self.create_layout(inner);
         self.render_upper_section(upper_area, buf);
+        self.render_progress_bar(progress_bar_area, buf);
         self.render_controls(controls_area, buf);
     }
 }
@@ -116,10 +129,10 @@ impl App {
             .border_set(border::THICK)
     }
 
-    fn create_layout(&self, area: Rect) -> [Rect; 2] {
+    fn create_layout(&self, area: Rect) -> [Rect; 3] {
         Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(15), Constraint::Length(3)])
+            .constraints([Constraint::Min(10), Constraint::Length(3), Constraint::Length(3)])
             .areas(area)
     }
 
@@ -131,6 +144,10 @@ impl App {
 
         VisualizerComponent::new(self.state.clone()).render(visualizer_area, buf);
         PlaylistComponent::default().render(playlist_area, buf);
+    }
+
+    fn render_progress_bar(&mut self, area: Rect, buf: &mut Buffer) {
+        self.progress_bar.render(self.state.clone(), area, buf);
     }
 
     fn render_controls(&mut self, area: Rect, buf: &mut Buffer) {

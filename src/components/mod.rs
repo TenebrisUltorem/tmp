@@ -16,3 +16,6 @@ pub use toggles::shuffle_toggle;
 
 mod volume_control;
 pub use volume_control::volume_control;
+
+mod progress_bar;
+pub use progress_bar::progress_bar;
