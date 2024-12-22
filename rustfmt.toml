@@ -1,0 +1,5 @@
+use_small_heuristics = "Max"
+fn_args_layout = "Compressed"
+max_width = 110
+fn_call_width = 110
+attr_fn_like_width = 110

@@ -400,6 +400,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustring_builder"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bbcdd915563de773175c8bcf01a516b7c165d2282d3b6b46f53edb812958d2f"
+
+[[package]]
 name = "rustversion"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -545,6 +551,7 @@ version = "0.1.0"
 dependencies = [
  "lazy_static",
  "ratatui",
+ "rustring_builder",
 ]
 
 [[package]]

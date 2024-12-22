@@ -1,5 +1,5 @@
-mod components;
 mod app;
+mod components;
 mod event_handler;
 
 use std::io::Error;
