@@ -20,9 +20,9 @@ pub fn progress_bar() -> InteractiveWidget {
         .on_mouse_drag(on_click)
 }
 
-fn draw_progress_bar(_: InteractionState, app_state: AppState, area: Rect, buf: &mut Buffer) {
+fn draw_progress_bar(_: InteractionState, app_state: &AppState, area: Rect, buf: &mut Buffer) {
     let progress_bar_width = area.width - 4;
-    let progress_bar_slider_position = progress_bar_width as f64 * app_state.play_progress;
+    let progress_bar_slider_position = progress_bar_width as f64 * app_state.get_play_progress();
     let bar_length = (progress_bar_slider_position - 1.0).max(0.0) as usize;
 
     let mut string: String = String::new();
@@ -35,7 +35,7 @@ fn draw_progress_bar(_: InteractionState, app_state: AppState, area: Rect, buf: 
         .render(area, buf);
 }
 
-fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state: &mut AppState) {
+fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state: &AppState) {
     // Вычисляем ширину активной области слайдера
     let clickable_width = widget.area().width - PADDING.left - PADDING.right - BORDER_WIDTH;
 
@@ -44,7 +44,7 @@ fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state:
 
     // Преобразуем позицию в значение от 0 до 1
     let normalized_position = click_position.clamp(0, clickable_width as i16) as f64;
-    app_state.play_progress = normalized_position / clickable_width as f64;
+    app_state.set_play_progress(normalized_position / clickable_width as f64);
 }
 
 

@@ -6,7 +6,6 @@ use ratatui::{
 
 use crate::app::AppState;
 
-#[derive(Debug)]
 pub struct VisualizerComponent {
     app_state: AppState,
 }
@@ -19,7 +18,8 @@ impl VisualizerComponent {
 
 impl Widget for VisualizerComponent {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(format!("{}\n{}", self.app_state.string, self.app_state.input_string))
+        let text = format!("{}\n{}", self.app_state.get_debug_string(), self.app_state.get_input_string());
+        Paragraph::new(text)
             .block(Block::bordered())
             .render(area, buf);
     }

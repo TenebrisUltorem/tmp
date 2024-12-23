@@ -27,11 +27,11 @@ pub fn volume_control() -> InteractiveWidget {
 }
 
 fn draw_volume_control(
-    interaction_state: InteractionState, app_state: AppState, area: Rect, buf: &mut Buffer,
+    interaction_state: InteractionState, app_state: &AppState, area: Rect, buf: &mut Buffer,
 ) {
     let mut frame = Block::bordered().padding(PADDING);
 
-    let mut frame_label = Line::from(format!(" Vol {}% ", (app_state.volume * 100.0) as u8));
+    let mut frame_label = Line::from(format!(" Vol {}% ", (app_state.get_volume() * 100.0) as u8));
 
     if interaction_state == InteractionState::Hovered {
         frame = frame.border_type(BorderType::Thick);
@@ -40,12 +40,12 @@ fn draw_volume_control(
 
     frame = frame.title(frame_label);
 
-    let volume_gauge = get_volume_string(app_state.volume);
+    let volume_gauge = get_volume_string(app_state.get_volume());
     let view = Paragraph::new(volume_gauge).block(frame);
     view.render(area, buf);
 }
 
-fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state: &mut AppState) {
+fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state: &AppState) {
     // Вычисляем ширину активной области слайдера
     let clickable_width = widget.area().width - PADDING.left - PADDING.right - BORDER_WIDTH;
 
@@ -54,15 +54,15 @@ fn on_click(widget: &mut InteractiveWidget, mouse_position: Position, app_state:
 
     // Преобразуем позицию в значение от 0 до 1
     let normalized_position = click_position.clamp(0, clickable_width as i16) as f64;
-    app_state.volume = normalized_position / clickable_width as f64;
+    app_state.set_volume(normalized_position / clickable_width as f64);
 }
 
-fn increase_volume(_: &mut InteractiveWidget, _: Position, app_state: &mut AppState) {
-    app_state.volume = (app_state.volume + VOLUME_SCROLL_STEP).min(1.0);
+fn increase_volume(_: &mut InteractiveWidget, _: Position, app_state: &AppState) {
+    app_state.set_volume((app_state.get_volume() + VOLUME_SCROLL_STEP).min(1.0));
 }
 
-fn decrease_volume(_: &mut InteractiveWidget, _: Position, app_state: &mut AppState) {
-    app_state.volume = (app_state.volume - VOLUME_SCROLL_STEP).max(0.0);
+fn decrease_volume(_: &mut InteractiveWidget, _: Position, app_state: &AppState) {
+    app_state.set_volume((app_state.get_volume() - VOLUME_SCROLL_STEP).max(0.0));
 }
 
 fn get_volume_string(volume_ratio: f64) -> String {

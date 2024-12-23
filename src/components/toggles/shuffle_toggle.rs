@@ -19,19 +19,22 @@ pub fn shuffle_toggle() -> InteractiveWidget {
     InteractiveWidget::default().on_mouse_down(on_click).draw(draw_shuffle_toggle)
 }
 
-fn on_click(_: &mut InteractiveWidget, _: Position, app_state: &mut AppState) {
-    app_state.shuffle_state = !app_state.shuffle_state;
-    app_state.string += format!("Shuffle toggle switched to: {}\n", app_state.shuffle_state).as_str();
+fn on_click(_: &mut InteractiveWidget, _: Position, app_state: &AppState) {
+    app_state.set_shuffle_state(!app_state.get_shuffle_state());
+
+    let mut debug_string = app_state.get_debug_string();
+    debug_string.push_str(&format!("Shuffle toggle switched to: {}\n", app_state.get_shuffle_state()));
+    app_state.set_debug_string(debug_string);
 }
 
-fn draw_shuffle_toggle(widget_state: InteractionState, app_state: AppState, area: Rect, buf: &mut Buffer) {
+fn draw_shuffle_toggle(widget_state: InteractionState, app_state: &AppState, area: Rect, buf: &mut Buffer) {
     let view = match widget_state {
         InteractionState::Hovered => Paragraph::new(Line::from(SHUFFLE_TOGGLE_LABEL_STRONG).centered())
             .block(Block::bordered().border_type(BorderType::Thick)),
         InteractionState::Pressed => {
             Paragraph::new(Line::from(SHUFFLE_TOGGLE_LABEL_PRESSED).centered()).block(Block::bordered())
         }
-        _ => match app_state.shuffle_state {
+        _ => match app_state.get_shuffle_state() {
             true => {
                 Paragraph::new(Line::from(SHUFFLE_TOGGLE_LABEL_STRONG).centered()).block(Block::bordered())
             }

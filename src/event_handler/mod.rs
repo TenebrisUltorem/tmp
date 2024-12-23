@@ -19,9 +19,9 @@ pub enum InteractionState {
 }
 
 /// Тип обработчика событий мыши
-type MouseHandler = dyn Fn(&mut InteractiveWidget, Position, &mut AppState);
+type MouseHandler = dyn Fn(&mut InteractiveWidget, Position, &AppState);
 /// Тип функции отрисовки
-type DrawHandler = dyn Fn(InteractionState, AppState, Rect, &mut Buffer);
+type DrawHandler = dyn Fn(InteractionState, &AppState, Rect, &mut Buffer);
 
 /// Интерактивный виджет с поддержкой событий мыши
 #[derive(Default, Clone)]
@@ -37,37 +37,37 @@ pub struct InteractiveWidget {
 
 impl InteractiveWidget {
     // Builder методы
-    pub fn on_mouse_down(mut self, handler: fn(&mut InteractiveWidget, Position, &mut AppState)) -> Self {
+    pub fn on_mouse_down(mut self, handler: fn(&mut InteractiveWidget, Position, &AppState)) -> Self {
         self.on_mouse_down_fn = Some(Arc::new(handler));
         self
     }
 
-    pub fn on_mouse_drag(mut self, handler: fn(&mut InteractiveWidget, Position, &mut AppState)) -> Self {
+    pub fn on_mouse_drag(mut self, handler: fn(&mut InteractiveWidget, Position, &AppState)) -> Self {
         self.on_mouse_drag_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn on_mouse_scroll_up(
-        mut self, handler: fn(&mut InteractiveWidget, Position, &mut AppState),
+        mut self, handler: fn(&mut InteractiveWidget, Position, &AppState),
     ) -> Self {
         self.on_mouse_scroll_up_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn on_mouse_scroll_down(
-        mut self, handler: fn(&mut InteractiveWidget, Position, &mut AppState),
+        mut self, handler: fn(&mut InteractiveWidget, Position, &AppState),
     ) -> Self {
         self.on_mouse_scroll_down_fn = Some(Arc::new(handler));
         self
     }
 
-    pub fn draw(mut self, draw_fn: fn(InteractionState, AppState, Rect, &mut Buffer)) -> Self {
+    pub fn draw(mut self, draw_fn: fn(InteractionState, &AppState, Rect, &mut Buffer)) -> Self {
         self.draw_fn = Some(Arc::new(draw_fn));
         self
     }
 
     // Методы отрисовки
-    pub fn render(&mut self, app_state: AppState, area: Rect, buf: &mut Buffer) {
+    pub fn render(&mut self, app_state: &AppState, area: Rect, buf: &mut Buffer) {
         self.set_area(area);
         if let Some(draw_fn) = &self.draw_fn.clone() {
             draw_fn(self.state(), app_state, area, buf);
@@ -99,7 +99,7 @@ impl InteractiveWidget {
 
     // Обработчики событий
     fn handle_mouse_event(
-        &mut self, event_type: MouseEventType, position: Position, app_state: &mut AppState,
+        &mut self, event_type: MouseEventType, position: Position, app_state: &AppState,
     ) {
         match event_type {
             MouseEventType::Over => self.set_state(InteractionState::Hovered),
@@ -153,35 +153,36 @@ impl EventHandler {
         component
     }
 
-    pub fn handle_events(&mut self, app_state: &mut AppState) -> Result<(), Error> {
+    pub fn handle_events(&mut self, app_state: &AppState) -> Result<(), Error> {
         match event::read()? {
             Event::Key(key_event) => self.handle_key_event(app_state, key_event),
             Event::Mouse(mouse_event) => self.handle_mouse_event(app_state, mouse_event),
-            Event::Paste(paste_event) => self.handle_paste_event(app_state, paste_event),
             _ => {}
         };
         Ok(())
     }
 
-    fn handle_key_event(&mut self, app_state: &mut AppState, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, app_state: &AppState, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Esc => {
-                app_state.exit = true;
+                app_state.set_exit(true);
             },
             KeyCode::Enter => {
-                if !app_state.input_string.is_empty() {
-                    app_state.playlist.push(app_state.input_string.clone());
-                    app_state.input_string.clear();
+                if !app_state.get_input_string().is_empty() {
+                    app_state.add_track(app_state.get_input_string().clone());
+                    app_state.set_input_string(String::new());
                 }
             },
             KeyCode::Char(char) => {
-                app_state.input_string.push(char);
+                let mut input = app_state.get_input_string();
+                input.push(char);
+                app_state.set_input_string(input);
             }
             _ => {}
         }
     }
 
-    fn handle_mouse_event(&mut self, app_state: &mut AppState, mouse_event: MouseEvent) {
+        fn handle_mouse_event(&mut self, app_state: &AppState, mouse_event: MouseEvent) {
         let mouse_position = Position::new(mouse_event.column, mouse_event.row);
 
         for component in &mut self.components {
@@ -215,24 +216,13 @@ impl EventHandler {
                     );
                 }
                 MouseEventKind::Up(_) | MouseEventKind::Moved => {
-                    component.handle_mouse_event(MouseEventType::Over, relative_mouse_position, app_state);
+                    component.handle_mouse_event(
+                        MouseEventType::Over,
+                         relative_mouse_position, 
+                         app_state
+                    );
                 }
                 _ => {}
-            }
-        }
-    }
-
-    fn handle_paste_event(&mut self, app_state: &mut AppState, data: String) {
-        app_state.string += "Paste event\n";
-        // Обрабатываем пути к файлам, которые были перетащены
-        for path in data.split('\n') {
-            if path.is_empty() {
-                continue;
-            }
-            
-            // Добавляем путь в список треков
-            if let Ok(path) = std::path::PathBuf::from(path.trim()).canonicalize() {
-                app_state.string += path.to_str().unwrap();
             }
         }
     }

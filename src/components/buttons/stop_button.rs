@@ -18,11 +18,14 @@ pub fn stop_button() -> InteractiveWidget {
     InteractiveWidget::default().on_mouse_down(on_click).draw(draw_stop_button)
 }
 
-fn on_click(_: &mut InteractiveWidget, _: Position, app_state: &mut AppState) {
-    app_state.string += "Stop button clicked\n";
+fn on_click(_: &mut InteractiveWidget, _: Position, app_state: &AppState) {
+    let mut debug_string = app_state.get_debug_string();
+    debug_string.push_str("Stop button clicked\n");
+
+    app_state.set_debug_string(debug_string);
 }
 
-fn draw_stop_button(widget_state: InteractionState, _: AppState, area: Rect, buf: &mut Buffer) {
+fn draw_stop_button(widget_state: InteractionState, _: &AppState, area: Rect, buf: &mut Buffer) {
     let view = match widget_state {
         InteractionState::Hovered => Paragraph::new(Line::from(STOP_BUTTON_LABEL_HOVERED).centered())
             .block(Block::bordered().border_type(BorderType::Thick)),
