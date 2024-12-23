@@ -2,7 +2,7 @@ use ratatui::{
     buffer::Buffer,
     crossterm::{
         self,
-        event::{DisableMouseCapture, EnableMouseCapture},
+        event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture}, terminal::{EnterAlternateScreen, LeaveAlternateScreen},
     },
     layout::{Constraint, Direction, Flex, Layout, Rect},
     style::Stylize,
@@ -16,14 +16,13 @@ use std::io::Error;
 use crate::components::{
     last_track_button, 
     next_track_button, 
-    play_button, 
-    progress_bar, 
-    repeat_toggle, 
-    shuffle_toggle, 
+    play_button, playlist, 
+    progress_bar,
+    repeat_toggle,
+    shuffle_toggle,
     stop_button,
-    volume_control, 
-    PlaylistComponent, 
-    VisualizerComponent,
+    volume_control,
+    VisualizerComponent
 };
 use crate::event_handler::{EventHandler, InteractiveWidget};
 
@@ -44,6 +43,8 @@ pub struct AppState {
     pub repeat_state: bool,
     pub volume: f64,
     pub play_progress: f64,
+    pub playlist: Vec<String>,
+    pub input_string: String,
 }
 
 /// Главное приложение
@@ -51,6 +52,7 @@ pub struct App {
     state: AppState,
     event_handler: EventHandler,
 
+    playlist: InteractiveWidget,
     progress_bar: InteractiveWidget,
     play_button: InteractiveWidget,
     last_track_button: InteractiveWidget,
@@ -65,6 +67,7 @@ impl Default for App {
     fn default() -> Self {
         let mut event_handler = EventHandler::default();
 
+        let playlist = event_handler.register_component(playlist());
         let progress_bar = event_handler.register_component(progress_bar());
         let play_button = event_handler.register_component(play_button());
         let last_track_button = event_handler.register_component(last_track_button());
@@ -77,6 +80,7 @@ impl Default for App {
         Self {
             state: AppState::default(),
             event_handler,
+            playlist,
             progress_bar,
             play_button,
             last_track_button,
@@ -98,13 +102,13 @@ impl App {
     }
 
     fn setup(&mut self) -> Result<(), Error> {
-        crossterm::execute!(std::io::stdout(), EnableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
         self.state.volume = 1.0;
         Ok(())
     }
 
     fn cleanup(&self) -> Result<(), Error> {
-        crossterm::execute!(std::io::stdout(), DisableMouseCapture)
+        crossterm::execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste)
     }
 
     fn main_loop(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
@@ -145,14 +149,14 @@ impl App {
             .areas(area)
     }
 
-    fn render_upper_section(&self, area: Rect, buf: &mut Buffer) {
+    fn render_upper_section(&mut self, area: Rect, buf: &mut Buffer) {
         let [visualizer_area, playlist_area] = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(70), Constraint::Min(20)])
             .areas(area);
 
         VisualizerComponent::new(self.state.clone()).render(visualizer_area, buf);
-        PlaylistComponent::default().render(playlist_area, buf);
+        self.playlist.render(self.state.clone(), playlist_area, buf);
     }
 
     fn render_progress_bar(&mut self, area: Rect, buf: &mut Buffer) {

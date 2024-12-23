@@ -1,8 +1,8 @@
 mod visualizer_component;
 pub use visualizer_component::VisualizerComponent;
 
-mod playlist_component;
-pub use playlist_component::PlaylistComponent;
+mod playlist;
+pub use playlist::playlist;
 
 mod buttons;
 pub use buttons::last_track_button;

@@ -19,6 +19,8 @@ impl VisualizerComponent {
 
 impl Widget for VisualizerComponent {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Paragraph::new(self.app_state.string).block(Block::bordered()).render(area, buf);
+        Paragraph::new(format!("{}\n{}", self.app_state.string, self.app_state.input_string))
+            .block(Block::bordered())
+            .render(area, buf);
     }
 }

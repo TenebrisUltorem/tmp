@@ -4,8 +4,7 @@ use ratatui::{
     layout::{Position, Rect},
 };
 use std::{
-    io::Error,
-    sync::{Arc, Mutex},
+    io::Error, sync::{Arc, Mutex}
 };
 
 use crate::app::AppState;
@@ -158,6 +157,7 @@ impl EventHandler {
         match event::read()? {
             Event::Key(key_event) => self.handle_key_event(app_state, key_event),
             Event::Mouse(mouse_event) => self.handle_mouse_event(app_state, mouse_event),
+            Event::Paste(paste_event) => self.handle_paste_event(app_state, paste_event),
             _ => {}
         };
         Ok(())
@@ -167,6 +167,15 @@ impl EventHandler {
         match key_event.code {
             KeyCode::Esc => {
                 app_state.exit = true;
+            },
+            KeyCode::Enter => {
+                if !app_state.input_string.is_empty() {
+                    app_state.playlist.push(app_state.input_string.clone());
+                    app_state.input_string.clear();
+                }
+            },
+            KeyCode::Char(char) => {
+                app_state.input_string.push(char);
             }
             _ => {}
         }
@@ -209,6 +218,21 @@ impl EventHandler {
                     component.handle_mouse_event(MouseEventType::Over, relative_mouse_position, app_state);
                 }
                 _ => {}
+            }
+        }
+    }
+
+    fn handle_paste_event(&mut self, app_state: &mut AppState, data: String) {
+        app_state.string += "Paste event\n";
+        // Обрабатываем пути к файлам, которые были перетащены
+        for path in data.split('\n') {
+            if path.is_empty() {
+                continue;
+            }
+            
+            // Добавляем путь в список треков
+            if let Ok(path) = std::path::PathBuf::from(path.trim()).canonicalize() {
+                app_state.string += path.to_str().unwrap();
             }
         }
     }
