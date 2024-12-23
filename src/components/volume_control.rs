@@ -67,7 +67,7 @@ fn decrease_volume(_: &mut InteractiveWidget, _: Position, app_state: &mut AppSt
 
 fn get_volume_string(volume_ratio: f64) -> String {
     let volume_ratio = volume_ratio.clamp(0.0, 1.0);
-    let blocks_count = (volume_ratio * VOLUME_BLOCKS.len() as f64).round() as usize;
+    let blocks_count = (volume_ratio * VOLUME_BLOCKS.len() as f64).ceil() as usize;
 
     VOLUME_BLOCKS.iter().take(blocks_count).collect::<String>()
 }

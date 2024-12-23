@@ -28,6 +28,14 @@ use crate::components::{
 use crate::event_handler::{EventHandler, InteractiveWidget};
 
 /// Состояние приложения
+/// 
+/// # Fields
+/// 
+/// * `exit` - Флаг выхода из приложения
+/// * `shuffle_state` - Флаг состояния перемешивания
+/// * `repeat_state` - Флаг состояния повтора
+/// * `volume` - Громкость (от 0 до 1)
+/// * `play_progress` - Прогресс воспроизведения (от 0 до 1)
 #[derive(Debug, Default, Clone)]
 pub struct AppState {
     pub exit: bool,
@@ -35,6 +43,7 @@ pub struct AppState {
     pub shuffle_state: bool,
     pub repeat_state: bool,
     pub volume: f64,
+    pub play_progress: f64,
 }
 
 /// Главное приложение
