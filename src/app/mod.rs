@@ -48,7 +48,7 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let app_state = AppState::default();
-        let mut event_handler = EventHandler::default();
+        let mut event_handler = EventHandler::new(app_state.clone());
 
         let playlist = event_handler.register_component(playlist());
         let progress_bar = event_handler.register_component(progress_bar());
@@ -79,6 +79,7 @@ impl Default for App {
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         self.setup()?;
+        self.event_handler.start()?;
         self.main_loop(terminal)?;
         self.cleanup()?;
         Ok(())
@@ -97,7 +98,6 @@ impl App {
     fn main_loop(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         while !self.app_state.should_exit() {
             terminal.draw(|frame| frame.render_widget(&mut *self, frame.area()))?;
-            self.event_handler.handle_events(&mut self.app_state)?;
         }
         Ok(())
     }

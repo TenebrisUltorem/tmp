@@ -33,7 +33,7 @@ impl AppState {
     }
 
     pub fn should_exit(&self) -> bool {
-        self.exit.lock().unwrap().clone()
+        *self.exit.lock().unwrap()
     }
 
     pub fn set_debug_string(&self, value: String) {
@@ -53,7 +53,7 @@ impl AppState {
     }
 
     pub fn get_shuffle_state(&self) -> bool {
-        self.shuffle_state.lock().unwrap().clone()
+        *self.shuffle_state.lock().unwrap()
     }
 
     pub fn set_repeat_state(&self, value: bool) {
@@ -63,7 +63,7 @@ impl AppState {
     }   
 
     pub fn get_repeat_state(&self) -> bool {
-        self.repeat_state.lock().unwrap().clone()
+        *self.repeat_state.lock().unwrap()
     }
 
     pub fn set_volume(&self, value: f64) {
@@ -73,7 +73,7 @@ impl AppState {
     }
 
     pub fn get_volume(&self) -> f64 {
-        self.volume.lock().unwrap().clone()
+        *self.volume.lock().unwrap()
     }
 
     pub fn set_play_progress(&self, value: f64) {       
@@ -83,7 +83,7 @@ impl AppState {
     }
 
     pub fn get_play_progress(&self) -> f64 {
-        self.play_progress.lock().unwrap().clone()
+        *self.play_progress.lock().unwrap()
     }   
 
     pub fn add_track(&self, track: String) {

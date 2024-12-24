@@ -18,9 +18,9 @@ pub enum InteractionState {
 }
 
 /// Тип обработчика событий мыши
-type MouseHandler = dyn Fn(&mut InteractiveWidget, Position, &AppState);
+type MouseHandler = dyn Fn(&mut InteractiveWidget, Position, &AppState) + Send + Sync;
 /// Тип функции отрисовки
-type DrawHandler = dyn Fn(InteractionState, &AppState, Rect, &mut Buffer);
+type DrawHandler = dyn Fn(InteractionState, &AppState, Rect, &mut Buffer) + Send + Sync;
 
 /// Интерактивный виджет с поддержкой событий мыши
 #[derive(Default, Clone)]
@@ -75,7 +75,7 @@ impl InteractiveWidget {
 
     // Геттеры и сеттеры
     pub fn area(&self) -> Rect {
-        self.area.lock().unwrap().clone()
+        *self.area.lock().unwrap()
     }
 
     pub fn set_area(&mut self, new_area: Rect) {
