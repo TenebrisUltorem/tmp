@@ -7,7 +7,7 @@ use ratatui::{
 
 use crate::{
     app::AppState,
-    event_handler::{InteractionState, InteractiveWidget},
+    interaction::{InteractionState, InteractiveWidget},
 };
 
 const NEXT_TRACK_BUTTON_LABEL: &str = "▷▷|";

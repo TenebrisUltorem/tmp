@@ -8,8 +8,8 @@ use ratatui::widgets::Paragraph;
 use ratatui::widgets::Widget;
 
 use crate::app::AppState;
-use crate::event_handler::InteractionState;
-use crate::event_handler::InteractiveWidget;
+use crate::interaction::InteractionState;
+use crate::interaction::InteractiveWidget;
 
 const SHUFFLE_TOGGLE_LABEL: &str = "△▽";
 const SHUFFLE_TOGGLE_LABEL_STRONG: &str = "▲▼";

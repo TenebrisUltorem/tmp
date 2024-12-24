@@ -27,7 +27,7 @@ use crate::components::{
     volume_control,
     VisualizerComponent
 };
-use crate::event_handler::{EventHandler, InteractiveWidget};
+use crate::interaction::{EventHandler, InteractiveWidget};
 
 /// Главное приложение
 pub struct App {
@@ -135,7 +135,7 @@ impl App {
     fn render_upper_section(&mut self, area: Rect, buf: &mut Buffer) {
         let [visualizer_area, playlist_area] = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(70), Constraint::Min(20)])
+            .constraints([Constraint::Percentage(70), Constraint::Min(35)])
             .areas(area);
 
         VisualizerComponent::new(self.app_state.clone()).render(visualizer_area, buf);

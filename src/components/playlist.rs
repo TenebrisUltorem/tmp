@@ -6,7 +6,7 @@ use ratatui::{
 
 use crate::{
     app::AppState, 
-    event_handler::{InteractionState, InteractiveWidget}
+    interaction::{InteractionState, InteractiveWidget}
 };
 
 

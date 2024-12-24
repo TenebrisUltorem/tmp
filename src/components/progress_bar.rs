@@ -4,7 +4,7 @@ use ratatui::{
 
 use crate::{
     app::AppState, 
-    event_handler::{InteractionState, InteractiveWidget}
+    interaction::{InteractionState, InteractiveWidget}
 };
 
 const PADDING: Padding = Padding::new(1, 1, 0, 0);
