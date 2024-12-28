@@ -1,8 +1,12 @@
-use std::{io::Error, sync::{Arc, Mutex}, thread};
+use std::{
+    io::Error,
+    sync::{Arc, Mutex},
+    thread,
+};
 
 use ratatui::{
-    crossterm::event::{self, Event, KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind}, 
-    layout::Position
+    crossterm::event::{self, Event, KeyCode, KeyEvent, MouseButton, MouseEvent, MouseEventKind},
+    layout::Position,
 };
 
 use crate::app::AppState;
@@ -17,17 +21,12 @@ pub struct EventHandler {
 }
 
 pub trait Handelable {
-    fn handle_mouse_event(
-        &mut self, event_type: MouseEventType, position: Position, app_state: &AppState
-    );
+    fn handle_mouse_event(&mut self, event_type: MouseEventType, position: Position);
 }
 
 impl EventHandler {
-    pub fn new(app_state: AppState) -> Self {
-        Self {
-            app_state,
-            components: Arc::new(Mutex::new(Vec::new())),
-        }
+    pub fn new(app_state: &AppState) -> Self {
+        Self { app_state: app_state.clone(), components: Arc::new(Mutex::new(Vec::new())) }
     }
 
     pub fn register_component(&mut self, component: InteractiveWidget) -> InteractiveWidget {
@@ -52,6 +51,7 @@ impl EventHandler {
         match event::read()? {
             Event::Key(key_event) => self.handle_key_event(key_event),
             Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
+            Event::Paste(paste_event) => self.handle_paste_event(paste_event),
             _ => {}
         };
         Ok(())
@@ -61,17 +61,24 @@ impl EventHandler {
         match key_event.code {
             KeyCode::Esc => {
                 self.app_state.set_exit(true);
-            },
+            }
             KeyCode::Enter => {
-                if !self.app_state.get_input_string().is_empty() {
-                    self.app_state.add_track(self.app_state.get_input_string().clone());
+                if !self.app_state.input_string().is_empty() {
+                    self.app_state.add_track(self.app_state.input_string().clone());
                     self.app_state.set_input_string(String::new());
                 }
-            },
+            }
             KeyCode::Char(char) => {
-                let mut input = self.app_state.get_input_string();
-                input.push(char);
-                self.app_state.set_input_string(input);
+                let mut input = self.app_state.input_string();
+
+                if char == '\'' && !input.is_empty() {
+                    self.app_state.add_track(input.clone());
+                    self.app_state.set_input_string(String::new());
+                }
+                else if char == '\'' || !input.is_empty() {
+                    input.push(char);
+                    self.app_state.set_input_string(input);
+                }
             }
             _ => {}
         }
@@ -83,42 +90,39 @@ impl EventHandler {
         for component in self.components.lock().unwrap().iter_mut() {
             let area = component.area();
             if !area.contains(mouse_position) {
-                component.handle_mouse_event(MouseEventType::Out, mouse_position, &self.app_state);
+                component.handle_mouse_event(MouseEventType::Out, mouse_position);
                 continue;
             }
 
             let relative_mouse_position = Position::new(mouse_position.x - area.x, mouse_position.y - area.y);
 
             match mouse_event.kind {
-                MouseEventKind::Down(MouseButton::Left) => {
-                    component.handle_mouse_event(MouseEventType::Down, relative_mouse_position, &self.app_state);
-                }
-                MouseEventKind::Drag(MouseButton::Left) => {
-                    component.handle_mouse_event(MouseEventType::Drag, relative_mouse_position, &self.app_state);
-                }
-                MouseEventKind::ScrollDown => {
-                    component.handle_mouse_event(
-                        MouseEventType::ScrollDown,
-                        relative_mouse_position,
-                        &self.app_state,
-                    );
-                }
-                MouseEventKind::ScrollUp => {
-                    component.handle_mouse_event(
-                        MouseEventType::ScrollUp,
-                        relative_mouse_position,
-                        &self.app_state,
-                    );
-                }
-                MouseEventKind::Up(_) | MouseEventKind::Moved => {
-                    component.handle_mouse_event(
-                        MouseEventType::Over,
-                         relative_mouse_position, 
-                         &self.app_state
-                    );
-                }
+                MouseEventKind::Down(MouseButton::Left) => component.handle_mouse_event(
+                    MouseEventType::Down,
+                    relative_mouse_position
+                ),
+                MouseEventKind::Drag(MouseButton::Left) => component.handle_mouse_event(
+                    MouseEventType::Drag,
+                    relative_mouse_position
+                ),
+                MouseEventKind::ScrollDown => component.handle_mouse_event(
+                    MouseEventType::ScrollDown,
+                    relative_mouse_position
+                ),
+                MouseEventKind::ScrollUp => component.handle_mouse_event(
+                    MouseEventType::ScrollUp,
+                    relative_mouse_position
+                ),
+                MouseEventKind::Up(_) | MouseEventKind::Moved => component.handle_mouse_event(
+                    MouseEventType::Over,
+                    relative_mouse_position
+                ),
                 _ => {}
             }
         }
+    }
+
+    fn handle_paste_event(&mut self, paste_event: String) {
+        self.app_state.set_input_string(paste_event);
     }
 }

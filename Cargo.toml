@@ -5,9 +5,8 @@ edition = "2021"
 description = "Tui Music Player"
 
 [dependencies]
-lazy_static = "1.5.0"
 ratatui = { version = "0.29.0", features = ["all-widgets"] }
-rustring_builder = "0.2.0"
+rodio = "0.20.1"
 
 [profile.release]
 opt-level = 3

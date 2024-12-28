@@ -1,10 +1,19 @@
-use std::sync::{Arc, Mutex};
+use std::{path::Path, sync::{Arc, Mutex}};
 
+const TRACK_FORMATS: [&str; 3] = ["mp3", "ogg", "wav"];
+
+#[derive(Default, Clone, PartialEq)]
+pub enum PlayerState {
+    #[default]
+    Stopped,
+    Playing,
+    Paused
+}
 
 /// Состояние приложения
-/// 
+///
 /// # Fields
-/// 
+///
 /// * `exit` - Флаг выхода из приложения
 /// * `shuffle_state` - Флаг состояния перемешивания
 /// * `repeat_state` - Флаг состояния повтора
@@ -15,17 +24,22 @@ use std::sync::{Arc, Mutex};
 #[derive(Default, Clone)]
 pub struct AppState {
     exit: Arc<Mutex<bool>>,
+
     debug_string: Arc<Mutex<String>>,
+    input_string: Arc<Mutex<String>>,
+
+    player_state: Arc<Mutex<PlayerState>>,
+
+    playlist: Arc<Mutex<Vec<String>>>,
+
     shuffle_state: Arc<Mutex<bool>>,
     repeat_state: Arc<Mutex<bool>>,
-    volume: Arc<Mutex<f64>>,
-    play_progress: Arc<Mutex<f64>>,
-    playlist: Arc<Mutex<Vec<String>>>,
-    input_string: Arc<Mutex<String>>,
+
+    volume: Arc<Mutex<f32>>,
+    play_progress: Arc<Mutex<f64>>
 }
 
 impl AppState {
-
     pub fn set_exit(&self, value: bool) {
         if let Ok(mut exit) = self.exit.lock() {
             *exit = value;
@@ -42,8 +56,18 @@ impl AppState {
         }
     }
 
-    pub fn get_debug_string(&self) -> String {
+    pub fn debug_string(&self) -> String {
         self.debug_string.lock().unwrap().clone()
+    }
+
+    pub fn set_player_state(&self, value: PlayerState) {
+        if let Ok(mut player_state) = self.player_state.lock() {
+            *player_state = value;
+        }
+    }
+
+    pub fn player_state(&self) -> PlayerState {
+        self.player_state.lock().unwrap().clone()
     }
 
     pub fn set_shuffle_state(&self, value: bool) {
@@ -52,7 +76,7 @@ impl AppState {
         }
     }
 
-    pub fn get_shuffle_state(&self) -> bool {
+    pub fn shuffle_state(&self) -> bool {
         *self.shuffle_state.lock().unwrap()
     }
 
@@ -60,23 +84,23 @@ impl AppState {
         if let Ok(mut repeat_state) = self.repeat_state.lock() {
             *repeat_state = value;
         }
-    }   
+    }
 
-    pub fn get_repeat_state(&self) -> bool {
+    pub fn repeat_state(&self) -> bool {
         *self.repeat_state.lock().unwrap()
     }
 
-    pub fn set_volume(&self, value: f64) {
+    pub fn set_volume(&self, value: f32) {
         if let Ok(mut volume) = self.volume.lock() {
             *volume = value;
         }
     }
 
-    pub fn get_volume(&self) -> f64 {
+    pub fn volume(&self) -> f32 {
         *self.volume.lock().unwrap()
     }
 
-    pub fn set_play_progress(&self, value: f64) {       
+    pub fn set_play_progress(&self, value: f64) {
         if let Ok(mut play_progress) = self.play_progress.lock() {
             *play_progress = value;
         }
@@ -84,19 +108,25 @@ impl AppState {
 
     pub fn get_play_progress(&self) -> f64 {
         *self.play_progress.lock().unwrap()
-    }   
+    }
 
-    pub fn add_track(&self, track: String) {
+    pub fn add_track(&self, track_file_path: String) {
         if let Ok(mut playlist) = self.playlist.lock() {
-            playlist.push(track);
+            let path = Path::new(&track_file_path);
+
+            if let Some(extension) = path.extension() {
+                if TRACK_FORMATS.contains(&extension.to_str().unwrap()) {
+                    playlist.push(track_file_path);
+                }
+            }
         }
     }
 
-    pub fn get_playlist(&self) -> Vec<String> {
+    pub fn playlist(&self) -> Vec<String> {
         self.playlist.lock().unwrap().clone()
     }
 
-    pub fn get_input_string(&self) -> String {
+    pub fn input_string(&self) -> String {
         self.input_string.lock().unwrap().clone()
     }
 
@@ -105,6 +135,4 @@ impl AppState {
             *input_string = value;
         }
     }
-
-
 }

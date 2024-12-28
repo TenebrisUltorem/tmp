@@ -1,21 +1,23 @@
 use ratatui::{
-    buffer::Buffer, 
-    layout::Rect, 
-    widgets::{Block, List, Widget}
+    buffer::Buffer, layout::Rect, widgets::{Block, List, Widget}
 };
 
 use crate::{
-    app::AppState, 
-    interaction::{InteractionState, InteractiveWidget}
+    app::AppState,
+    interaction::{InteractionState, InteractiveWidget},
 };
 
+pub fn playlist(app_state: &AppState) -> InteractiveWidget {
+    let app_state = app_state.clone();
 
-pub fn playlist() -> InteractiveWidget {
-    InteractiveWidget::default().draw(draw_playlist)
+    InteractiveWidget::default()
+        .draw(move |widget_state, area, buf| {
+            draw_playlist(widget_state, &app_state, area, buf)
+        })
 }
 
 fn draw_playlist(_: InteractionState, app_state: &AppState, area: Rect, buf: &mut Buffer) {
-    List::new(app_state.get_playlist())
-        .block(Block::bordered().title(" Playlist "))
-        .render(area, buf);
+    let playlist = app_state.playlist();
+
+    List::new(playlist).block(Block::bordered().title(" Playlist ")).render(area, buf);
 }

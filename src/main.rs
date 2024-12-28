@@ -1,6 +1,7 @@
 mod app;
 mod components;
 mod interaction;
+mod player;
 
 use std::io::Error;
 

@@ -1,11 +1,13 @@
 mod app_state;
 pub use app_state::AppState;
+pub use app_state::PlayerState;
 
 use ratatui::{
     buffer::Buffer,
     crossterm::{
         self,
-        event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture}, terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+        event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture},
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen},
     },
     layout::{Constraint, Direction, Flex, Layout, Rect},
     style::Stylize,
@@ -16,23 +18,17 @@ use ratatui::{
 };
 use std::io::Error;
 
-use crate::components::{
-    last_track_button, 
-    next_track_button, 
-    play_button, playlist, 
-    progress_bar,
-    repeat_toggle,
-    shuffle_toggle,
-    stop_button,
-    volume_control,
-    VisualizerComponent
-};
+use crate::{components::{
+    last_track_button, next_track_button, play_button, playlist, progress_bar, repeat_toggle, shuffle_toggle,
+    stop_button, volume_control, VisualizerComponent,
+}, player::Player};
 use crate::interaction::{EventHandler, InteractiveWidget};
 
 /// Главное приложение
 pub struct App {
     app_state: AppState,
     event_handler: EventHandler,
+    player: Player,
 
     playlist: InteractiveWidget,
     progress_bar: InteractiveWidget,
@@ -48,21 +44,23 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let app_state = AppState::default();
-        let mut event_handler = EventHandler::new(app_state.clone());
+        let mut event_handler = EventHandler::new(&app_state);
+        let player = Player::new();
 
-        let playlist = event_handler.register_component(playlist());
-        let progress_bar = event_handler.register_component(progress_bar());
-        let play_button = event_handler.register_component(play_button());
-        let last_track_button = event_handler.register_component(last_track_button());
-        let next_track_button = event_handler.register_component(next_track_button());
-        let stop_button = event_handler.register_component(stop_button());
-        let volume_control = event_handler.register_component(volume_control());
-        let shuffle_toggle = event_handler.register_component(shuffle_toggle());
-        let repeat_toggle = event_handler.register_component(repeat_toggle());
+        let playlist = event_handler.register_component(playlist(&app_state));
+        let progress_bar = event_handler.register_component(progress_bar(&app_state, &player));
+        let play_button = event_handler.register_component(play_button(&app_state, &player));
+        let last_track_button = event_handler.register_component(last_track_button(&app_state));
+        let next_track_button = event_handler.register_component(next_track_button(&app_state));
+        let stop_button = event_handler.register_component(stop_button(&app_state, &player));
+        let volume_control = event_handler.register_component(volume_control(&app_state, &player));
+        let shuffle_toggle = event_handler.register_component(shuffle_toggle(&app_state));
+        let repeat_toggle = event_handler.register_component(repeat_toggle(&app_state));
 
         Self {
             app_state,
             event_handler,
+            player,
             playlist,
             progress_bar,
             play_button,
@@ -86,19 +84,31 @@ impl App {
     }
 
     fn setup(&mut self) -> Result<(), Error> {
-        crossterm::execute!(std::io::stdout(), EnterAlternateScreen, EnableMouseCapture, EnableBracketedPaste)?;
+        crossterm::execute!(
+            std::io::stdout(),
+            EnterAlternateScreen,
+            EnableMouseCapture,
+            EnableBracketedPaste
+        )?;
         self.app_state.set_volume(1.0);
         Ok(())
     }
 
     fn cleanup(&self) -> Result<(), Error> {
-        crossterm::execute!(std::io::stdout(), LeaveAlternateScreen, DisableMouseCapture, DisableBracketedPaste)
+        crossterm::execute!(
+            std::io::stdout(),
+            LeaveAlternateScreen,
+            DisableMouseCapture,
+            DisableBracketedPaste
+        )
     }
 
     fn main_loop(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         while !self.app_state.should_exit() {
             terminal.draw(|frame| frame.render_widget(&mut *self, frame.area()))?;
         }
+        self.player.stop();
+
         Ok(())
     }
 }
@@ -120,7 +130,7 @@ impl App {
     fn create_main_block(&self) -> Block {
         Block::bordered()
             .title(Line::from(" 𝄞 TMP 𝄞 ".bold()).centered())
-            .title_bottom(Line::from(vec![" Quit".into(), "<Esc>".blue()]).left_aligned())
+            .title_bottom(Line::from(vec![" Quit ".into(), "<Esc> ".blue()]).left_aligned())
             .padding(Padding::new(1, 1, 0, 0))
             .border_set(border::THICK)
     }
@@ -139,11 +149,11 @@ impl App {
             .areas(area);
 
         VisualizerComponent::new(self.app_state.clone()).render(visualizer_area, buf);
-        self.playlist.render(&self.app_state, playlist_area, buf);
+        self.playlist.render(playlist_area, buf);
     }
 
     fn render_progress_bar(&mut self, area: Rect, buf: &mut Buffer) {
-        self.progress_bar.render(&self.app_state, area, buf);
+        self.progress_bar.render(area, buf);
     }
 
     fn render_controls(&mut self, area: Rect, buf: &mut Buffer) {
@@ -165,10 +175,10 @@ impl App {
         .areas(area);
 
         let [play, last, next, stop] = areas;
-        self.play_button.render(&self.app_state, play, buf);
-        self.last_track_button.render(&self.app_state, last, buf);
-        self.next_track_button.render(&self.app_state, next, buf);
-        self.stop_button.render(&self.app_state, stop, buf);
+        self.play_button.render(play, buf);
+        self.last_track_button.render(last, buf);
+        self.next_track_button.render(next, buf);
+        self.stop_button.render(stop, buf);
     }
 
     fn render_right_controls(&mut self, area: Rect, buf: &mut Buffer) {
@@ -178,8 +188,8 @@ impl App {
                 .areas(area);
 
         let [volume, shuffle, repeat] = areas;
-        self.volume_control.render(&self.app_state, volume, buf);
-        self.shuffle_toggle.render(&self.app_state, shuffle, buf);
-        self.repeat_toggle.render(&self.app_state, repeat, buf);
+        self.volume_control.render(volume, buf);
+        self.shuffle_toggle.render(shuffle, buf);
+        self.repeat_toggle.render(repeat, buf);
     }
 }

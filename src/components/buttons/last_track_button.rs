@@ -1,6 +1,6 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Position, Rect},
+    layout::Rect,
     text::Line,
     widgets::{Block, BorderType, Paragraph, Widget},
 };
@@ -15,18 +15,22 @@ const LAST_TRACK_BUTTON_LABEL_HOVERED: &str = "|◀◀";
 const LAST_TRACK_BUTTON_LABEL_PRESSED: &str = "|◂◂";
 
 /// Создает кнопку перехода к предыдущему треку
-pub fn last_track_button() -> InteractiveWidget {
-    InteractiveWidget::default().on_mouse_down(on_click).draw(draw_last_track_button)
+pub fn last_track_button(app_state: &AppState) -> InteractiveWidget {
+    let app_state = app_state.clone();
+
+    InteractiveWidget::default()
+        .on_mouse_down(move |_, _| on_click(&app_state))
+        .draw(draw_last_track_button)
 }
 
-fn on_click(_: &mut InteractiveWidget, _: Position, app_state: &AppState) {
-    let mut debug_string = app_state.get_debug_string();
+fn on_click(app_state: &AppState) {
+    let mut debug_string = app_state.debug_string();
     debug_string.push_str("Last track button clicked\n");
-    
+
     app_state.set_debug_string(debug_string);
 }
 
-fn draw_last_track_button(widget_state: InteractionState, _: &AppState, area: Rect, buf: &mut Buffer) {
+fn draw_last_track_button(widget_state: InteractionState, area: Rect, buf: &mut Buffer) {
     let view = match widget_state {
         InteractionState::Hovered => Paragraph::new(Line::from(LAST_TRACK_BUTTON_LABEL_HOVERED).centered())
             .block(Block::bordered().border_type(BorderType::Thick)),
