@@ -8,7 +8,8 @@ use ratatui::{
 
 use crate::{
     app::AppState,
-    interaction::{InteractionState, InteractiveWidget}, player::Player,
+    interaction::{InteractionState, InteractiveWidget},
+    player::Player,
 };
 
 const VOLUME_BLOCKS: [char; 8] = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
@@ -23,35 +24,29 @@ pub fn volume_control(app_state: &AppState, player: &Player) -> InteractiveWidge
             let app_state = app_state.clone();
             let player = player.clone();
 
-            move |widget, mouse_position,| {
-                on_click(widget, mouse_position, &app_state, &player)
-            }
+            move |widget, mouse_position| on_click(widget, mouse_position, &app_state, &player)
         })
         .on_mouse_drag({
             let app_state = app_state.clone();
             let player = player.clone();
 
-            move |widget, mouse_position,| {
-                on_click(widget, mouse_position, &app_state, &player)
-            }
+            move |widget, mouse_position| on_click(widget, mouse_position, &app_state, &player)
         })
         .on_mouse_scroll_up({
             let app_state = app_state.clone();
             let player = player.clone();
 
-            move |_, _,| { increase_volume(&app_state, &player) }
+            move |_, _| increase_volume(&app_state, &player)
         })
         .on_mouse_scroll_down({
             let app_state = app_state.clone();
             let player = player.clone();
 
-            move |_, _,| { decrease_volume(&app_state, &player) }
+            move |_, _| decrease_volume(&app_state, &player)
         })
         .draw({
             let app_state = app_state.clone();
-            move |interaction_state, area, buf| {
-                draw_volume_control(interaction_state, &app_state, area, buf)
-            }
+            move |interaction_state, area, buf| draw_volume_control(interaction_state, &app_state, area, buf)
         })
 }
 

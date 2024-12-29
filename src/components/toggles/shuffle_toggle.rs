@@ -22,9 +22,7 @@ pub fn shuffle_toggle(app_state: &AppState) -> InteractiveWidget {
         })
         .draw({
             let app_state = app_state.clone();
-            move |widget_state, area, buf| {
-                draw_shuffle_toggle(widget_state, &app_state, area, buf)
-            }
+            move |widget_state, area, buf| draw_shuffle_toggle(widget_state, &app_state, area, buf)
         })
 }
 

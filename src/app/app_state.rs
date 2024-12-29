@@ -1,4 +1,8 @@
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::{
+    path::Path,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 const TRACK_FORMATS: [&str; 3] = ["mp3", "ogg", "wav"];
 
@@ -7,7 +11,37 @@ pub enum PlayerState {
     #[default]
     Stopped,
     Playing,
-    Paused
+    Paused,
+}
+
+/// Информация о текущем треке
+///
+/// # Fields
+///
+/// * `title` - Название трека
+/// * `artist` - Исполнитель
+/// * `album` - Альбом
+/// * `duration` - Полная длительность трека
+/// * `played_duration` - прошеднее время воспроизведения трека
+#[derive(Clone)]
+pub struct CurrentTrackInfo {
+    pub title: String,
+    pub artist: String,
+    pub album: String,
+    pub duration: Duration,
+    pub played_duration: Duration,
+}
+
+impl CurrentTrackInfo {
+    pub fn new(
+        title: String,
+        artist: String,
+        album: String,
+        duration: Duration,
+        played_duration: Duration,
+    ) -> Self {
+        Self { title, artist, album, duration, played_duration }
+    }
 }
 
 /// Состояние приложения
@@ -36,7 +70,9 @@ pub struct AppState {
     repeat_state: Arc<Mutex<bool>>,
 
     volume: Arc<Mutex<f32>>,
-    play_progress: Arc<Mutex<f64>>
+    play_progress: Arc<Mutex<f64>>,
+
+    current_track_info: Arc<Mutex<Option<CurrentTrackInfo>>>,
 }
 
 impl AppState {
@@ -134,5 +170,15 @@ impl AppState {
         if let Ok(mut input_string) = self.input_string.lock() {
             *input_string = value;
         }
+    }
+
+    pub fn set_current_track_info(&self, value: Option<CurrentTrackInfo>) {
+        if let Ok(mut current_track_info) = self.current_track_info.lock() {
+            *current_track_info = value;
+        }
+    }
+
+    pub fn current_track_info(&self) -> Option<CurrentTrackInfo> {
+        self.current_track_info.lock().unwrap().clone()
     }
 }

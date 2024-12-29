@@ -1,6 +1,15 @@
-use std::{fs::File, io::BufReader, sync::mpsc::{self, Sender}, thread, time::Duration};
+use std::{
+    fs::File,
+    io::BufReader,
+    sync::mpsc::{self, Sender},
+    thread,
+    time::Duration,
+};
 
+use audiotags::Tag;
 use rodio::{Decoder, OutputStream, Sink, Source};
+
+use crate::app::{AppState, CurrentTrackInfo};
 
 #[derive(Debug)]
 enum PlayerCommand {
@@ -18,51 +27,59 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(app_state: &AppState) -> Self {
         let (sender, receiver) = mpsc::channel();
-        thread::spawn(move || {
-            let mut current_file_path = Option::<String>::None;
-            let (_stream, stream_handle) = OutputStream::try_default()
-                .unwrap();
-            let sink = Sink::try_new(&stream_handle).unwrap();
 
-            for command in receiver {
-                match command {
-                    PlayerCommand::Play(path) => {
-                        if let Ok(file) = File::open(path.clone()) {
-                            current_file_path = Some(path);
-                            let decoder = Decoder::new(
-                                BufReader::new(file)
-                            ).unwrap();
-                            sink.append(decoder);
-                        }
-                        sink.play();
-                    },
-                    PlayerCommand::Stop => {
-                        sink.stop();
-                    },
-                    PlayerCommand::Pause => {
-                        sink.pause();
-                    },
-                    PlayerCommand::Resume => {
-                        sink.play();
-                    },
-                    PlayerCommand::SetVolume(volume) => {
-                        sink.set_volume(volume);
-                    },
-                    PlayerCommand::Seek(ratio) => {
-                        sink.stop();
+        thread::spawn({
+            let app_state = app_state.clone();
+            move || {
+                let mut current_file_path = Option::<String>::None;
+                let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+                let sink = Sink::try_new(&stream_handle).unwrap();
 
-                        if let Some(path) = current_file_path.clone() {
+                for command in receiver {
+                    match command {
+                        PlayerCommand::Play(path) => {
                             if let Ok(file) = File::open(path.clone()) {
-                                current_file_path = Some(path);
-                                let mut decoder = Decoder::new(
-                                    BufReader::new(file)
-                                ).unwrap();
-                                let total_duration = decoder.total_duration().unwrap().as_secs_f64();
-                                let duration = total_duration * ratio;
-                                let _ = decoder.try_seek(Duration::from_secs_f64(duration));
+                                current_file_path = Some(path.clone());
+
+                                let decoder = Decoder::new(BufReader::new(file)).unwrap();
+
+                                if let Some(duration) = decoder.total_duration() {
+                                    app_state.set_current_track_info(current_track_info(&path, duration));
+                                }
+
                                 sink.append(decoder);
+                            }
+                            sink.play();
+                        }
+                        PlayerCommand::Stop => {
+                            sink.stop();
+                        }
+                        PlayerCommand::Pause => {
+                            sink.pause();
+                        }
+                        PlayerCommand::Resume => {
+                            sink.play();
+                        }
+                        PlayerCommand::SetVolume(volume) => {
+                            sink.set_volume(volume);
+                        }
+                        PlayerCommand::Seek(ratio) => {
+                            sink.stop();
+
+                            if let Some(path) = current_file_path.clone() {
+                                if let Ok(file) = File::open(path.clone()) {
+                                    current_file_path = Some(path);
+                                    let mut decoder = Decoder::new(BufReader::new(file)).unwrap();
+                                    let total_duration = decoder
+                                        .total_duration()
+                                        .unwrap_or(Duration::from_secs(0))
+                                        .as_secs_f64();
+                                    let duration = total_duration * ratio;
+                                    let _ = decoder.try_seek(Duration::from_secs_f64(duration));
+                                    sink.append(decoder);
+                                }
                             }
                         }
                     }
@@ -72,7 +89,7 @@ impl Player {
 
         Self { command_sender: sender }
     }
-    
+
     // Методы для управления из UI
     pub fn play(&self, path: String) {
         self.command_sender.send(PlayerCommand::Play(path)).unwrap();
@@ -97,5 +114,24 @@ impl Player {
     pub fn seek(&self, position: f64) {
         self.command_sender.send(PlayerCommand::Seek(position)).unwrap();
     }
+}
 
+fn current_track_info(path: &String, track_duration: Duration) -> Option<CurrentTrackInfo> {
+    if let Some(tag) = Tag::new().read_from_path(&path).ok() {
+        let title = tag.title().unwrap_or("Unknown");
+        let artist = tag.artist().unwrap_or("Unknown");
+
+        let album =
+            if let Some(album) = tag.album() { album.title.to_string() } else { "Unknown".to_string() };
+
+        return Some(CurrentTrackInfo::new(
+            title.to_string(),
+            artist.to_string(),
+            album.to_string(),
+            track_duration,
+            Duration::from_secs(0),
+        ));
+    }
+
+    None
 }

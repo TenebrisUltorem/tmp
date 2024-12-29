@@ -35,11 +35,16 @@ impl EventHandler {
     }
 
     pub fn start(&mut self) -> Result<(), Error> {
-        let mut event_handler = self.clone();
+        let event_handler = self.clone();
 
         thread::spawn(move || -> Result<(), Error> {
             while !event_handler.app_state.should_exit() {
-                event_handler.handle_events()?;
+                match event::read()? {
+                    Event::Key(key_event) => event_handler.handle_key_event(key_event),
+                    Event::Mouse(mouse_event) => event_handler.handle_mouse_event(mouse_event),
+                    Event::Paste(paste_event) => event_handler.handle_paste_event(paste_event),
+                    _ => {}
+                };
             }
 
             Ok(())
@@ -47,17 +52,7 @@ impl EventHandler {
         Ok(())
     }
 
-    pub fn handle_events(&mut self) -> Result<(), Error> {
-        match event::read()? {
-            Event::Key(key_event) => self.handle_key_event(key_event),
-            Event::Mouse(mouse_event) => self.handle_mouse_event(mouse_event),
-            Event::Paste(paste_event) => self.handle_paste_event(paste_event),
-            _ => {}
-        };
-        Ok(())
-    }
-
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Esc => {
                 self.app_state.set_exit(true);
@@ -74,8 +69,7 @@ impl EventHandler {
                 if char == '\'' && !input.is_empty() {
                     self.app_state.add_track(input.clone());
                     self.app_state.set_input_string(String::new());
-                }
-                else if char == '\'' || !input.is_empty() {
+                } else if char == '\'' || !input.is_empty() {
                     input.push(char);
                     self.app_state.set_input_string(input);
                 }
@@ -84,7 +78,7 @@ impl EventHandler {
         }
     }
 
-    fn handle_mouse_event(&mut self, mouse_event: MouseEvent) {
+    fn handle_mouse_event(&self, mouse_event: MouseEvent) {
         let mouse_position = Position::new(mouse_event.column, mouse_event.row);
 
         for component in self.components.lock().unwrap().iter_mut() {
@@ -97,32 +91,27 @@ impl EventHandler {
             let relative_mouse_position = Position::new(mouse_position.x - area.x, mouse_position.y - area.y);
 
             match mouse_event.kind {
-                MouseEventKind::Down(MouseButton::Left) => component.handle_mouse_event(
-                    MouseEventType::Down,
-                    relative_mouse_position
-                ),
-                MouseEventKind::Drag(MouseButton::Left) => component.handle_mouse_event(
-                    MouseEventType::Drag,
-                    relative_mouse_position
-                ),
-                MouseEventKind::ScrollDown => component.handle_mouse_event(
-                    MouseEventType::ScrollDown,
-                    relative_mouse_position
-                ),
-                MouseEventKind::ScrollUp => component.handle_mouse_event(
-                    MouseEventType::ScrollUp,
-                    relative_mouse_position
-                ),
-                MouseEventKind::Up(_) | MouseEventKind::Moved => component.handle_mouse_event(
-                    MouseEventType::Over,
-                    relative_mouse_position
-                ),
+                MouseEventKind::Down(MouseButton::Left) => {
+                    component.handle_mouse_event(MouseEventType::Down, relative_mouse_position)
+                }
+                MouseEventKind::Drag(MouseButton::Left) => {
+                    component.handle_mouse_event(MouseEventType::Drag, relative_mouse_position)
+                }
+                MouseEventKind::ScrollDown => {
+                    component.handle_mouse_event(MouseEventType::ScrollDown, relative_mouse_position)
+                }
+                MouseEventKind::ScrollUp => {
+                    component.handle_mouse_event(MouseEventType::ScrollUp, relative_mouse_position)
+                }
+                MouseEventKind::Up(_) | MouseEventKind::Moved => {
+                    component.handle_mouse_event(MouseEventType::Over, relative_mouse_position)
+                }
                 _ => {}
             }
         }
     }
 
-    fn handle_paste_event(&mut self, paste_event: String) {
+    fn handle_paste_event(&self, paste_event: String) {
         self.app_state.set_input_string(paste_event);
     }
 }

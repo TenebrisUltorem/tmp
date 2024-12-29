@@ -1,5 +1,6 @@
 mod app_state;
 pub use app_state::AppState;
+pub use app_state::CurrentTrackInfo;
 pub use app_state::PlayerState;
 
 use ratatui::{
@@ -18,11 +19,16 @@ use ratatui::{
 };
 use std::io::Error;
 
-use crate::{components::{
-    last_track_button, next_track_button, play_button, playlist, progress_bar, repeat_toggle, shuffle_toggle,
-    stop_button, volume_control, VisualizerComponent,
-}, player::Player};
 use crate::interaction::{EventHandler, InteractiveWidget};
+use crate::{
+    components::{
+        last_track_button, next_track_button, play_button, playlist, progress_bar, repeat_toggle,
+        shuffle_toggle, stop_button, volume_control, VisualizerComponent,
+    },
+    player::Player,
+};
+
+const FRAME_TIME: u64 = 62; // ~ 16 fps
 
 /// Главное приложение
 pub struct App {
@@ -45,7 +51,7 @@ impl Default for App {
     fn default() -> Self {
         let app_state = AppState::default();
         let mut event_handler = EventHandler::new(&app_state);
-        let player = Player::new();
+        let player = Player::new(&app_state);
 
         let playlist = event_handler.register_component(playlist(&app_state));
         let progress_bar = event_handler.register_component(progress_bar(&app_state, &player));
@@ -106,6 +112,7 @@ impl App {
     fn main_loop(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         while !self.app_state.should_exit() {
             terminal.draw(|frame| frame.render_widget(&mut *self, frame.area()))?;
+            std::thread::sleep(std::time::Duration::from_millis(FRAME_TIME));
         }
         self.player.stop();
 

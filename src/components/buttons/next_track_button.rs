@@ -19,7 +19,7 @@ pub fn next_track_button(app_state: &AppState) -> InteractiveWidget {
     let app_state = app_state.clone();
 
     InteractiveWidget::default()
-        .on_mouse_down(move |_: &mut InteractiveWidget, _: Position,| on_click(&app_state))
+        .on_mouse_down(move |_: &mut InteractiveWidget, _: Position| on_click(&app_state))
         .draw(draw_next_track_button)
 }
 

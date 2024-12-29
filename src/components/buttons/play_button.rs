@@ -7,7 +7,8 @@ use ratatui::{
 
 use crate::{
     app::{AppState, PlayerState},
-    interaction::{InteractionState, InteractiveWidget}, player::Player,
+    interaction::{InteractionState, InteractiveWidget},
+    player::Player,
 };
 
 const PLAY_BUTTON_LABEL: &str = "▷";
@@ -18,20 +19,17 @@ const PLAY_BUTTON_LABEL_PAUSE: &str = "‖";
 const PLAY_BUTTON_LABEL_PAUSE_HOVERED: &str = "‖";
 const PLAY_BUTTON_LABEL_PAUSE_PRESSED: &str = "∥";
 
-
 pub fn play_button(app_state: &AppState, player: &Player) -> InteractiveWidget {
     InteractiveWidget::default()
         .on_mouse_down({
             let app_state = app_state.clone();
             let player = player.clone();
 
-            move |_, _,| on_click(&app_state, &player)
+            move |_, _| on_click(&app_state, &player)
         })
         .draw({
             let app_state = app_state.clone();
-            move |widget_state, area, buf| {
-                draw_play_button(widget_state, &app_state, area, buf)
-            }
+            move |widget_state, area, buf| draw_play_button(widget_state, &app_state, area, buf)
         })
 }
 
@@ -73,7 +71,8 @@ fn draw_play_button(widget_state: InteractionState, app_state: &AppState, area: 
             if app_state.player_state() == PlayerState::Playing {
                 Paragraph::new(Line::from(PLAY_BUTTON_LABEL_PRESSED).centered()).block(Block::bordered())
             } else {
-                Paragraph::new(Line::from(PLAY_BUTTON_LABEL_PAUSE_PRESSED).centered()).block(Block::bordered())
+                Paragraph::new(Line::from(PLAY_BUTTON_LABEL_PAUSE_PRESSED).centered())
+                    .block(Block::bordered())
             }
         }
         _ => {

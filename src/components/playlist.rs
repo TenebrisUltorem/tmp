@@ -1,5 +1,7 @@
 use ratatui::{
-    buffer::Buffer, layout::Rect, widgets::{Block, List, Widget}
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{Block, List, Widget},
 };
 
 use crate::{
@@ -11,9 +13,7 @@ pub fn playlist(app_state: &AppState) -> InteractiveWidget {
     let app_state = app_state.clone();
 
     InteractiveWidget::default()
-        .draw(move |widget_state, area, buf| {
-            draw_playlist(widget_state, &app_state, area, buf)
-        })
+        .draw(move |widget_state, area, buf| draw_playlist(widget_state, &app_state, area, buf))
 }
 
 fn draw_playlist(_: InteractionState, app_state: &AppState, area: Rect, buf: &mut Buffer) {

@@ -18,9 +18,7 @@ const LAST_TRACK_BUTTON_LABEL_PRESSED: &str = "|◂◂";
 pub fn last_track_button(app_state: &AppState) -> InteractiveWidget {
     let app_state = app_state.clone();
 
-    InteractiveWidget::default()
-        .on_mouse_down(move |_, _| on_click(&app_state))
-        .draw(draw_last_track_button)
+    InteractiveWidget::default().on_mouse_down(move |_, _| on_click(&app_state)).draw(draw_last_track_button)
 }
 
 fn on_click(app_state: &AppState) {

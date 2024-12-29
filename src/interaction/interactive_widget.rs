@@ -1,6 +1,7 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Position, Rect}, widgets::Widget,
+    layout::{Position, Rect},
+    widgets::Widget,
 };
 use std::sync::{Arc, Mutex};
 
@@ -34,32 +35,42 @@ pub struct InteractiveWidget {
 
 impl InteractiveWidget {
     // Builder методы
-    pub fn on_mouse_down<F>(mut self, handler: F) -> Self 
-    where F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static  {
+    pub fn on_mouse_down<F>(mut self, handler: F) -> Self
+    where
+        F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static,
+    {
         self.on_mouse_down_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn on_mouse_drag<F>(mut self, handler: F) -> Self
-    where F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static  {
+    where
+        F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static,
+    {
         self.on_mouse_drag_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn on_mouse_scroll_up<F>(mut self, handler: F) -> Self
-    where F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static {
+    where
+        F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static,
+    {
         self.on_mouse_scroll_up_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn on_mouse_scroll_down<F>(mut self, handler: F) -> Self
-    where F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static {
+    where
+        F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static,
+    {
         self.on_mouse_scroll_down_fn = Some(Arc::new(handler));
         self
     }
 
     pub fn draw<F>(mut self, draw_fn: F) -> Self
-    where F: Fn(InteractionState, Rect, &mut Buffer) + Send + Sync + 'static {
+    where
+        F: Fn(InteractionState, Rect, &mut Buffer) + Send + Sync + 'static,
+    {
         self.draw_fn = Some(Arc::new(draw_fn));
         self
     }

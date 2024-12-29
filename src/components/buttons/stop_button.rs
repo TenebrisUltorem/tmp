@@ -7,7 +7,8 @@ use ratatui::{
 
 use crate::{
     app::{AppState, PlayerState},
-    interaction::{InteractionState, InteractiveWidget}, player::Player,
+    interaction::{InteractionState, InteractiveWidget},
+    player::Player,
 };
 
 const STOP_BUTTON_LABEL: &str = "▢";
