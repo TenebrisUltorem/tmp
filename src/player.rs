@@ -1,7 +1,7 @@
 use std::{
     fs::File,
     io::BufReader,
-    sync::mpsc::{self, Sender},
+    sync::{mpsc::{self, Sender}, Arc},
     thread,
     time::Duration,
 };
@@ -9,7 +9,7 @@ use std::{
 use audiotags::Tag;
 use rodio::{Decoder, OutputStream, Sink, Source};
 
-use crate::app::{AppState, CurrentTrackInfo};
+use crate::app::{AppState, CurrentTrackInfo, PlayerState};
 
 #[derive(Debug)]
 enum PlayerCommand {
@@ -35,7 +35,7 @@ impl Player {
             move || {
                 let mut current_file_path = Option::<String>::None;
                 let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-                let sink = Sink::try_new(&stream_handle).unwrap();
+                let sink = Arc::new(Sink::try_new(&stream_handle).unwrap());
 
                 for command in receiver {
                     match command {
@@ -52,9 +52,11 @@ impl Player {
                                 sink.append(decoder);
                             }
                             sink.play();
+                            launch_sink_state_checker(&app_state, sink.clone());
                         }
                         PlayerCommand::Stop => {
                             sink.stop();
+                            current_file_path = None;
                         }
                         PlayerCommand::Pause => {
                             sink.pause();
@@ -134,4 +136,22 @@ fn current_track_info(path: &String, track_duration: Duration) -> Option<Current
     }
 
     None
+}
+
+
+fn launch_sink_state_checker(app_state: &AppState, sink: Arc<Sink>) {
+    thread::spawn({
+        let sink = sink.clone();
+        let app_state = app_state.clone();
+        move || {
+            while !sink.empty() {
+                thread::sleep(Duration::from_secs(1));
+                app_state.set_debug_string("Track is playing");
+            }
+            app_state.set_debug_string("Track is not playing");
+
+            app_state.set_current_track_info(None);
+            app_state.set_player_state(PlayerState::Stopped);
+        }
+    });
 }

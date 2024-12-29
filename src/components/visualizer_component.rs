@@ -63,8 +63,8 @@ fn render_visualizer(area: Rect, buf: &mut Buffer) {
         bar_heights.iter().for_each(|height| {
             line.push(if y < *height { BAR_SYMBOL } else { ' ' });
         });
-        line
-    });
+        Line::from(line)
+    }).collect::<Vec<Line>>();
 
-    Paragraph::new(lines.map(|line| Line::from(line)).collect::<Vec<Line>>()).render(area, buf);
+    Paragraph::new(lines).render(area, buf);
 }

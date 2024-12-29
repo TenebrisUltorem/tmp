@@ -18,6 +18,8 @@ use ratatui::{
     DefaultTerminal,
 };
 use std::io::Error;
+use std::thread;
+use std::time::Duration;
 
 use crate::interaction::{EventHandler, InteractiveWidget};
 use crate::{
@@ -84,6 +86,7 @@ impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         self.setup()?;
         self.event_handler.start()?;
+        launch_track_progression_handler(&self.app_state);
         self.main_loop(terminal)?;
         self.cleanup()?;
         Ok(())
@@ -199,4 +202,25 @@ impl App {
         self.shuffle_toggle.render(shuffle, buf);
         self.repeat_toggle.render(repeat, buf);
     }
+}
+
+
+fn launch_track_progression_handler(app_state: &AppState) {
+    let app_state = app_state.clone();
+    thread::spawn(move || {
+        loop {
+            if let Some(info) = app_state.current_track_info() {
+                if app_state.player_state() == PlayerState::Playing {
+                    app_state.set_current_track_info(Some(CurrentTrackInfo::new(
+                        info.title, 
+                        info.artist, 
+                        info.album, 
+                        info.duration, 
+                        Duration::from_secs(info.played_duration.as_secs() + 1)
+                    )));
+                }
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
 }

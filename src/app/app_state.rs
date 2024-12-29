@@ -70,7 +70,6 @@ pub struct AppState {
     repeat_state: Arc<Mutex<bool>>,
 
     volume: Arc<Mutex<f32>>,
-    play_progress: Arc<Mutex<f64>>,
 
     current_track_info: Arc<Mutex<Option<CurrentTrackInfo>>>,
 }
@@ -86,9 +85,9 @@ impl AppState {
         *self.exit.lock().unwrap()
     }
 
-    pub fn set_debug_string(&self, value: String) {
+    pub fn set_debug_string(&self, value: impl Into<String>) {
         if let Ok(mut debug_string) = self.debug_string.lock() {
-            *debug_string = value;
+            *debug_string = value.into();
         }
     }
 
@@ -134,16 +133,6 @@ impl AppState {
 
     pub fn volume(&self) -> f32 {
         *self.volume.lock().unwrap()
-    }
-
-    pub fn set_play_progress(&self, value: f64) {
-        if let Ok(mut play_progress) = self.play_progress.lock() {
-            *play_progress = value;
-        }
-    }
-
-    pub fn get_play_progress(&self) -> f64 {
-        *self.play_progress.lock().unwrap()
     }
 
     pub fn add_track(&self, track_file_path: String) {
