@@ -25,7 +25,6 @@ pub fn stop_button(app_state: &AppState, player: &Player) -> InteractiveWidget {
 }
 
 fn on_click(app_state: &AppState, player: &Player) {
-    app_state.set_debug_string("Stop button clicked");
     app_state.set_player_state(PlayerState::Stopped);
     app_state.set_current_track_info(None);
     player.stop();

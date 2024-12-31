@@ -21,7 +21,24 @@ pub struct EventHandler {
 }
 
 pub trait Handelable {
-    fn handle_mouse_event(&mut self, event_type: MouseEventType, position: Position);
+    /// Обработка событий мыши
+    /// 
+    /// # Args:
+    /// * `event_type` - Тип события мыши
+    /// * `relative_position` - Позиция события мыши (относительно виджета)
+    fn handle_mouse_event(&mut self, event_type: MouseEventType, relative_position: Position);
+
+    /// Обработка событий клавиатуры
+    /// 
+    /// # Args:
+    /// * `key_code` - Код клавиши
+    fn handle_key_event(&mut self, key_code: KeyCode);
+
+    /// Обработка событий вставки
+    /// 
+    /// # Args:
+    /// * `paste_event` - Событие вставки
+    fn handle_paste_event(&mut self, paste_event: String);
 }
 
 impl EventHandler {
@@ -57,27 +74,14 @@ impl EventHandler {
             KeyCode::Esc => {
                 self.app_state.set_exit(true);
             }
-            KeyCode::Enter => {
-                if !self.app_state.input_string().is_empty() {
-                    self.app_state.add_track(self.app_state.input_string().clone());
-                    self.app_state.set_input_string(String::new());
+            _ => {
+                for component in self.components.lock().unwrap().iter_mut() {
+                    component.handle_key_event(key_event.code);
                 }
             }
-            KeyCode::Char(char) => {
-                let mut input = self.app_state.input_string();
-
-                if char == '\'' && !input.is_empty() {
-                    self.app_state.add_track(input.clone());
-                    self.app_state.set_input_string(String::new());
-                } else if char == '\'' || !input.is_empty() {
-                    input.push(char);
-                    self.app_state.set_input_string(input);
-                }
-            }
-            _ => {}
         }
     }
-
+ 
     fn handle_mouse_event(&self, mouse_event: MouseEvent) {
         let mouse_position = Position::new(mouse_event.column, mouse_event.row);
 
@@ -112,6 +116,8 @@ impl EventHandler {
     }
 
     fn handle_paste_event(&self, paste_event: String) {
-        self.app_state.set_input_string(paste_event);
+        for component in self.components.lock().unwrap().iter_mut() {
+            component.handle_paste_event(paste_event.clone());
+        }
     }
 }

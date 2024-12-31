@@ -1,9 +1,7 @@
 use ratatui::{
-    buffer::Buffer,
-    layout::{Position, Rect},
-    widgets::Widget,
+    buffer::Buffer, crossterm::event::KeyCode, layout::{Position, Rect}, widgets::Widget
 };
-use std::sync::{Arc, Mutex};
+use std::{collections::HashMap, sync::{Arc, Mutex}};
 
 use super::{event_handler::Handelable, event_type::MouseEventType};
 
@@ -18,8 +16,15 @@ pub enum InteractionState {
 
 /// Тип обработчика событий мыши
 type MouseHandler = dyn Fn(&mut InteractiveWidget, Position) + Send + Sync;
+
+/// Тип обработки события клавиатуры
+type KeyboardHandler = dyn Fn(&mut InteractiveWidget, KeyCode) + Send + Sync;
+
 /// Тип функции отрисовки
 type DrawHandler = dyn Fn(InteractionState, Rect, &mut Buffer) + Send + Sync;
+
+/// Тип функции обработки события вставки
+type PasteHandler = dyn Fn(&mut InteractiveWidget, String) + Send + Sync;
 
 /// Интерактивный виджет с поддержкой событий мыши
 #[derive(Default, Clone)]
@@ -30,7 +35,9 @@ pub struct InteractiveWidget {
     on_mouse_drag_fn: Option<Arc<MouseHandler>>,
     on_mouse_scroll_up_fn: Option<Arc<MouseHandler>>,
     on_mouse_scroll_down_fn: Option<Arc<MouseHandler>>,
-    draw_fn: Option<Arc<DrawHandler>>,
+    on_paste_fn: Option<Arc<PasteHandler>>,
+    on_key_down_fns: Arc<Mutex<HashMap<KeyCode, Box<KeyboardHandler>>>>,
+    draw_fn: Option<Arc<DrawHandler>>
 }
 
 impl InteractiveWidget {
@@ -64,6 +71,24 @@ impl InteractiveWidget {
         F: Fn(&mut InteractiveWidget, Position) + Send + Sync + 'static,
     {
         self.on_mouse_scroll_down_fn = Some(Arc::new(handler));
+        self
+    }
+
+    pub fn on_paste<F>(mut self, handler: F) -> Self
+    where
+        F: Fn(&mut InteractiveWidget, String) + Send + Sync + 'static,
+    {
+        self.on_paste_fn = Some(Arc::new(handler));
+        self
+    }
+
+    pub fn on_key_down<F>(self, key: KeyCode, handler: F) -> Self
+    where
+        F: Fn(&mut InteractiveWidget, KeyCode) + Send + Sync + 'static,
+    {
+        if let Ok(mut on_key_down_fns) = self.on_key_down_fns.lock() {
+            on_key_down_fns.insert(key, Box::new(handler));
+        }
         self
     }
 
@@ -137,6 +162,20 @@ impl Handelable for InteractiveWidget {
                     handler(self, position);
                 }
             }
+        }
+    }
+
+    fn handle_key_event(&mut self, key_code: KeyCode) {
+        if let Ok(on_key_down_fns) = self.on_key_down_fns.clone().lock() {
+            if let Some(handler) = on_key_down_fns.get(&key_code).clone() {
+                handler(self, key_code);
+            }
+        }
+    }
+
+    fn handle_paste_event(&mut self, paste_event: String) {
+        if let Some(handler) = &self.on_paste_fn.clone() {
+            handler(self, paste_event);
         }
     }
 }

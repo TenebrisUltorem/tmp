@@ -1,10 +1,7 @@
 use std::{
-    path::Path,
     sync::{Arc, Mutex},
     time::Duration,
 };
-
-const TRACK_FORMATS: [&str; 3] = ["mp3", "ogg", "wav"];
 
 #[derive(Default, Clone, PartialEq)]
 pub enum PlayerState {
@@ -54,13 +51,9 @@ impl CurrentTrackInfo {
 /// * `volume` - Громкость (от 0 до 1)
 /// * `play_progress` - Прогресс воспроизведения (от 0 до 1)
 /// * `playlist` - Плейлист
-/// * `input_string` - Строка ввода (для перехвата ввода файлов)
 #[derive(Default, Clone)]
 pub struct AppState {
     exit: Arc<Mutex<bool>>,
-
-    debug_string: Arc<Mutex<String>>,
-    input_string: Arc<Mutex<String>>,
 
     player_state: Arc<Mutex<PlayerState>>,
 
@@ -83,16 +76,6 @@ impl AppState {
 
     pub fn should_exit(&self) -> bool {
         *self.exit.lock().unwrap()
-    }
-
-    pub fn set_debug_string(&self, value: impl Into<String>) {
-        if let Ok(mut debug_string) = self.debug_string.lock() {
-            *debug_string = value.into();
-        }
-    }
-
-    pub fn debug_string(&self) -> String {
-        self.debug_string.lock().unwrap().clone()
     }
 
     pub fn set_player_state(&self, value: PlayerState) {
@@ -137,13 +120,7 @@ impl AppState {
 
     pub fn add_track(&self, track_file_path: String) {
         if let Ok(mut playlist) = self.playlist.lock() {
-            let path = Path::new(&track_file_path);
-
-            if let Some(extension) = path.extension() {
-                if TRACK_FORMATS.contains(&extension.to_str().unwrap()) {
-                    playlist.push(track_file_path);
-                }
-            }
+            playlist.push(track_file_path);
         }
     }
 
@@ -151,13 +128,9 @@ impl AppState {
         self.playlist.lock().unwrap().clone()
     }
 
-    pub fn input_string(&self) -> String {
-        self.input_string.lock().unwrap().clone()
-    }
-
-    pub fn set_input_string(&self, value: String) {
-        if let Ok(mut input_string) = self.input_string.lock() {
-            *input_string = value;
+    pub fn set_playlist(&self, value: Vec<String>) {
+        if let Ok(mut playlist) = self.playlist.lock() {
+            *playlist = value;
         }
     }
 

@@ -1,8 +1,5 @@
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    text::Line,
-    widgets::{Block, BorderType, Paragraph, Widget},
+    buffer::Buffer, crossterm::event::KeyCode, layout::Rect, text::Line, widgets::{Block, BorderType, Paragraph, Widget}
 };
 
 use crate::{
@@ -27,6 +24,12 @@ pub fn play_button(app_state: &AppState, player: &Player) -> InteractiveWidget {
 
             move |_, _| on_click(&app_state, &player)
         })
+        .on_key_down(KeyCode::Char(' '), {
+            let app_state = app_state.clone();
+            let player = player.clone();
+
+            move |_, _| on_click(&app_state, &player)
+        })
         .draw({
             let app_state = app_state.clone();
             move |widget_state, area, buf| draw_play_button(widget_state, &app_state, area, buf)
@@ -34,10 +37,6 @@ pub fn play_button(app_state: &AppState, player: &Player) -> InteractiveWidget {
 }
 
 fn on_click(app_state: &AppState, player: &Player) {
-    let mut debug_string = app_state.debug_string();
-    debug_string.push_str("Play button clicked \n");
-
-    app_state.set_debug_string(debug_string);
 
     match app_state.player_state() {
         PlayerState::Playing => {
@@ -49,8 +48,10 @@ fn on_click(app_state: &AppState, player: &Player) {
             app_state.set_player_state(PlayerState::Playing);
         }
         PlayerState::Stopped => {
-            player.play("test.mp3".to_string());
-            app_state.set_player_state(PlayerState::Playing);
+            if let Some(path) = app_state.playlist().get(0) {
+                player.play(path.to_string());
+                app_state.set_player_state(PlayerState::Playing);
+            }
         }
     }
 }

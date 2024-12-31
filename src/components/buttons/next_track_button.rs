@@ -23,11 +23,8 @@ pub fn next_track_button(app_state: &AppState) -> InteractiveWidget {
         .draw(draw_next_track_button)
 }
 
-fn on_click(app_state: &AppState) {
-    let mut debug_string = app_state.debug_string();
-    debug_string.push_str("Next track button clicked\n");
+fn on_click(_: &AppState) {
 
-    app_state.set_debug_string(debug_string);
 }
 
 fn draw_next_track_button(widget_state: InteractionState, area: Rect, buf: &mut Buffer) {

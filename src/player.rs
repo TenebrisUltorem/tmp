@@ -144,11 +144,7 @@ fn launch_sink_state_checker(app_state: &AppState, sink: Arc<Sink>) {
         let sink = sink.clone();
         let app_state = app_state.clone();
         move || {
-            while !sink.empty() {
-                thread::sleep(Duration::from_secs(1));
-                app_state.set_debug_string("Track is playing");
-            }
-            app_state.set_debug_string("Track is not playing");
+            while !sink.empty() { thread::sleep(Duration::from_secs(1)); }
 
             app_state.set_current_track_info(None);
             app_state.set_player_state(PlayerState::Stopped);

@@ -3,12 +3,13 @@ pub use app_state::AppState;
 pub use app_state::CurrentTrackInfo;
 pub use app_state::PlayerState;
 
+use ratatui::crossterm::event::DisableBracketedPaste;
+use ratatui::crossterm::event::EnableBracketedPaste;
 use ratatui::{
     buffer::Buffer,
     crossterm::{
         self,
-        event::{DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture},
-        terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+        event::{DisableMouseCapture, EnableMouseCapture},
     },
     layout::{Constraint, Direction, Flex, Layout, Rect},
     style::Stylize,
@@ -17,6 +18,7 @@ use ratatui::{
     widgets::{Block, Padding, Widget},
     DefaultTerminal,
 };
+
 use std::io::Error;
 use std::thread;
 use std::time::Duration;
@@ -24,8 +26,8 @@ use std::time::Duration;
 use crate::interaction::{EventHandler, InteractiveWidget};
 use crate::{
     components::{
-        last_track_button, next_track_button, play_button, playlist, progress_bar, repeat_toggle,
-        shuffle_toggle, stop_button, volume_control, VisualizerComponent,
+        last_track_button, next_track_button, play_button, playlist_widget, progress_bar, repeat_toggle,
+        shuffle_toggle, stop_button, volume_control,
     },
     player::Player,
 };
@@ -52,10 +54,11 @@ pub struct App {
 impl Default for App {
     fn default() -> Self {
         let app_state = AppState::default();
+        
         let mut event_handler = EventHandler::new(&app_state);
         let player = Player::new(&app_state);
 
-        let playlist = event_handler.register_component(playlist(&app_state));
+        let playlist = event_handler.register_component(playlist_widget(&app_state));
         let progress_bar = event_handler.register_component(progress_bar(&app_state, &player));
         let play_button = event_handler.register_component(play_button(&app_state, &player));
         let last_track_button = event_handler.register_component(last_track_button(&app_state));
@@ -85,28 +88,34 @@ impl Default for App {
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> Result<(), Error> {
         self.setup()?;
-        self.event_handler.start()?;
-        launch_track_progression_handler(&self.app_state);
         self.main_loop(terminal)?;
         self.cleanup()?;
         Ok(())
     }
 
     fn setup(&mut self) -> Result<(), Error> {
+        // Включаем захват мыши
         crossterm::execute!(
             std::io::stdout(),
-            EnterAlternateScreen,
             EnableMouseCapture,
             EnableBracketedPaste
         )?;
+
+        // Устанавливаем громкость по умолчанию на 100%
         self.app_state.set_volume(1.0);
+
+        // Запускаем обработчик событий
+        self.event_handler.start()?;
+
+        // Запускаем обработчик прогресса воспроизведения трека
+        launch_track_progression_handler(&self.app_state);
+
         Ok(())
     }
 
     fn cleanup(&self) -> Result<(), Error> {
         crossterm::execute!(
             std::io::stdout(),
-            LeaveAlternateScreen,
             DisableMouseCapture,
             DisableBracketedPaste
         )
@@ -140,7 +149,11 @@ impl App {
     fn create_main_block(&self) -> Block {
         Block::bordered()
             .title(Line::from(" 𝄞 TMP 𝄞 ".bold()).centered())
-            .title_bottom(Line::from(vec![" Quit ".into(), "<Esc> ".blue()]).left_aligned())
+            .title_bottom(Line::from(vec![
+                " Quit ".into(), "<Esc> ".blue(),
+                "━━━".into(),
+                " Play/Pause ".into(), "<Space> ".blue()
+            ]).left_aligned())
             .padding(Padding::new(1, 1, 0, 0))
             .border_set(border::THICK)
     }
@@ -153,13 +166,7 @@ impl App {
     }
 
     fn render_upper_section(&mut self, area: Rect, buf: &mut Buffer) {
-        let [visualizer_area, playlist_area] = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(70), Constraint::Min(35)])
-            .areas(area);
-
-        VisualizerComponent::new(self.app_state.clone()).render(visualizer_area, buf);
-        self.playlist.render(playlist_area, buf);
+        self.playlist.render(area, buf);
     }
 
     fn render_progress_bar(&mut self, area: Rect, buf: &mut Buffer) {
@@ -204,7 +211,7 @@ impl App {
     }
 }
 
-
+//TODO перейти на symphonia + cpal + rubato и убрать - это костыль
 fn launch_track_progression_handler(app_state: &AppState) {
     let app_state = app_state.clone();
     thread::spawn(move || {
